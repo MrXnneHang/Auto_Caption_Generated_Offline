@@ -4,7 +4,7 @@
 
 #### 注意:
 
-Models 会自动下载，不过会下到C盘的User用户路径下，如果有需要的。
+Models 会自动下载，不过会下到C盘的User用户路径下，如果有需要自己配置环境的,可以手动下载然后放到当前根目录的Model下方。
 
 环境配置见:https://alibaba-damo-academy.github.io/FunASR/en/installation/installation.html
 
