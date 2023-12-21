@@ -2,7 +2,7 @@ from modelscope.pipelines import pipeline
 from modelscope.utils.constant import Tasks
 
 
-def write_long_txt(wav_name,deletshort,skip_line):
+def write_long_txt(wav_name,deleteshort,skip_line):
     inference_pipeline = pipeline(
         task=Tasks.auto_speech_recognition,
         model='./model/speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-pytorch',
@@ -13,7 +13,7 @@ def write_long_txt(wav_name,deletshort,skip_line):
     sentences = rec_result["sentences"]
     lines = []
     for i in sentences:
-        if deletshort==True:
+        if deleteshort==True:
             if i["ts_list"][-1][-1]-i["ts_list"][0][0]<skip_line: #跳过不记录这些短文本
                 continue
             else:
@@ -39,6 +39,8 @@ def write_long_txt(wav_name,deletshort,skip_line):
                     print(str(i["ts_list"][0][0])+"|"+str(i["ts_list"][-1][-1])+"|"+i["text"])
                 else:
                     continue
+        else:
+            lines.append(str(i["ts_list"][0][0])+"|"+str(i["ts_list"][-1][-1])+"|"+i["text"])
     write_lines_to_file(f'./tmp/{wav_name}.txt', lines)
 
 def write_lines_to_file(file_path, lines):
