@@ -6,10 +6,12 @@ from txt_to_srt import convert_to_srt
 """
 
 """
+
+wav_name = "08"
 def main(wav_name):
-   
     print("开始语音识别")
-    write_long_txt(wav_name=wav_name,deleteshort=False,skip_line=10000) 
+    write_long_txt(wav_name=wav_name,cut_line=500000) ##./tmp/.txt
+    
     #print("开始处理识别后的语句")
     #convert_short_txt_to_long(wav_name=wav_name) ## ./tmp/processed.txt
     """我这里出了点问题，于是打算先去除掉这些长句部分来训练看看"""
