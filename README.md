@@ -1,5 +1,6 @@
 ## 项目介绍:
 
+## 如果你从github搭建，请将time_stamp.py中的模型路径改掉./model/MODEL_NAME替换成/damo/MODEL_NAME,那么模型会自动下载。
 #### 使用Funasr的带time_stamp的语音识别后转换成srt,并不复杂,
 
 #### 注意:
