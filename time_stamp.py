@@ -6,7 +6,7 @@ from sentences_method import generate_new_sentences
 def write_long_txt(wav_name,cut_line):
     inference_pipeline = pipeline(
         task=Tasks.auto_speech_recognition,
-        model='./model/speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-pytorch',
+        model='damo/speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-pytorch',
         param_dict={'use_timestamp': True}
     )
     rec_result = inference_pipeline(audio_in=f'./raw_audio/{wav_name}.wav')
