@@ -3,6 +3,8 @@ from short_text_to_long import convert_short_txt_to_long  ## 合并那些原本�
 import os
 from tqdm import tqdm
 from txt_to_srt import convert_to_srt
+import subprocess
+import sys
 """
 
 """
@@ -21,10 +23,19 @@ def main(wav_name):
     srt_content = convert_to_srt("./tmp/"+wav_name+".txt")
     with open("./tmp/"+wav_name+".srt", 'w', encoding='utf-8') as file:
         file.write(srt_content)
+
 if __name__ == "__main__":
+    '''
     file_names = os.listdir("./raw_audio")
-    if "desktop.ini" in file_names:
-        file_names.remove("desktop.ini")
+    '''
+    # file_names 为拖到bat上所有文件的路径列表
+    file_names = sys.argv[1:]
+    #print(file_names)
     for i in tqdm(range(len(file_names))):
-        main(wav_name=file_names[i].split(".")[0])
+        mp4_file = file_names[i]
+        # 保留文件名，去除后缀
+        wav_name = os.path.basename(mp4_file).split('.')[0]
+        # 调用 ffmpeg（环境变量里的） 将视频文件转为 wav 格式
+        subprocess.run(["ffmpeg","-vsync", "0", "-i", mp4_file, "-acodec", "pcm_s16le", "-vn", "./raw_audio/"+wav_name+".wav"])
+        main(wav_name)
     print("All process were done!")
