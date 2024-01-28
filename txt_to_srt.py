@@ -16,9 +16,20 @@ def process_line(line):
     start, end, text = parts
     return (int(start), int(end), text)
 
+def clean_txt(file_path):
+    """对txt文件内容去重并保留顺序，重新写入"""
+    l2 = []
+    with open(file_path, 'r', encoding='utf-8') as file:
+        lines = file.readlines()
+        [l2.append(i) for i in lines if not i in l2]
+    with open(file_path, 'w', encoding='utf-8') as file:
+        for line in l2:
+            file.write(line)
+
 def convert_to_srt(file_path):
     """读取文件，处理数据并转换为 SRT 格式"""
     srt_format = ""
+    clean_txt(file_path)
     with open(file_path, 'r', encoding='utf-8') as file:
         for index, line in enumerate(file, start=1):
             processed_line = process_line(line.strip())
