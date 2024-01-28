@@ -35,6 +35,7 @@ if __name__ == "__main__":
         mp4_file = file_names[i]
         # 保留文件名，去除后缀
         wav_name = os.path.basename(mp4_file).split('.')[0]
+        # 调用 ffmpeg（环境变量里的） 将视频文件转为 wav 格式
         subprocess.run(["ffmpeg","-vsync", "0", "-i", mp4_file, "-acodec", "pcm_s16le", "-vn", "./raw_audio/"+wav_name+".wav"])
         main(wav_name)
     print("All process were done!")
