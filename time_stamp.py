@@ -1,6 +1,6 @@
 from funasr import AutoModel
 from sentences_method import generate_new_sentences
-from automodel_rec_to_sentences import convert_format #把automodel 返回的rec转换成以前Pipline的格式。
+from automodel_rec_to_sentences import convert_format,remove_chinese_punctuation #把automodel 返回的rec转换成以前Pipline的格式。
 
 # 定义模型
 model = AutoModel(
@@ -13,20 +13,31 @@ model = AutoModel(
 
 
 # 生成结果并写入文件
-def generate_results(wav_name, hot_word):
+def generate_results(wav_name, hot_word,debug=False):
     res = model.generate(
         input=f"./raw_audio/{wav_name}.wav",
         hotword=hot_word,
         batch_size_s=300,
     )
-    sentences = convert_format(res)
-    return sentences
+    return res
 
 
 
 # 定义长文本写入函数
-def write_long_txt(wav_name, cut_line,hot_word):
-    sentences = generate_results(wav_name=wav_name,hot_word=hot_word)
+def write_long_txt(wav_name, cut_line,hot_word,debug=False):
+    response = generate_results(wav_name=wav_name,hot_word=hot_word)
+    if debug == True:
+        print(response[0])
+        print(remove_chinese_punctuation(response[0]["text"]))
+        print(len(remove_chinese_punctuation(response[0]["text"])),
+              len(response[0]["timestamp"]))  ##比对长度，如果不一样，说明有多余的未加入的符号。
+        ## 英文单词，不是按字母来算time_stamp的，而是按照单词来算time_stamp的，不管单词是不是有效。
+        ## 比如ablilly,koliyaal，这算两个词，占用两个time_stamp[start,end]x2
+        ## 因为有时候会识别出英文，所以需要让这个长度对齐。
+        print(response[0]["timestamp"])
+    sentences = convert_format(response)
+
+
     print("=====")
     print(sentences)
     print("=====")
@@ -58,4 +69,4 @@ def write_lines_to_file(file_path, lines):
 
 
 if __name__ == "__main__":
-    write_long_txt(wav_name="example",cut_line=1000000,hot_word="饶口令")
+    write_long_txt(wav_name="example",cut_line=1000000,hot_word="",debug=True)
