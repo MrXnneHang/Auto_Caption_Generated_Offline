@@ -29,5 +29,6 @@ punc_ct-transformer_zh-cn-common-vocab272727-pytorch  2024.2
 请不要在旧版本环境基础上构建新版本代码，旧版本的funasr不支持AutoModel模块，而新版本代码去掉了以前pipline的inference，可以自由搭配模型。  
 
 你可以自己在modelscope中下载模型然后放在./models 下方。或者使用我们的整合包。   
-
+待上传，不出意外应该是百度网盘  
 关于演示视频：    
+待制作  
