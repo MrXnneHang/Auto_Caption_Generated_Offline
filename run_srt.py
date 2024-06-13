@@ -16,7 +16,7 @@ def main(wav_name):
     hot_words = ""
     for line in lines:
         hot_words += line[:-1] #不加换行
-        hot_words += ","
+        hot_words += " "# hotwords不支持,换行等分隔，只认空格，其他无效。
     #print(hot_words)
     write_long_txt(wav_name=wav_name,cut_line=500000,hot_word=hot_words) ##./tmp/.txt
 
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         file_names.remove("put wav files here.txt")
     for i in tqdm(range(len(file_names))):
         if not file_names[i].endswith(".wav"):
-            print("并不是支持的wav格式,skip..")
+            print(f"{file_names[i]}并不是支持的wav格式,skip..")
             continue
         main(wav_name=file_names[i].split(".")[0])
     print("All process were done!")
