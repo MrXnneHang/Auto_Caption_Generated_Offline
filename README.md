@@ -31,6 +31,6 @@ punc_ct-transformer_zh-cn-common-vocab272727-pytorch  2024.2
 你可以自己在modelscope中下载模型然后放在./models 下方。或者使用我们的整合包。    
 链接：https://pan.baidu.com/s/1_RUIsaaAJkfx1EsJlbdv3A?pwd=4v4e   
 提取码：4v4e    
-6.13对应V2版本
+6.13对应V2版本   
 关于演示视频：    
 待制作  
