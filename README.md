@@ -33,4 +33,4 @@ punc_ct-transformer_zh-cn-common-vocab272727-pytorch  2024.2
 提取码：4v4e    
 6.13对应V2版本   
 关于演示视频：    
-待制作  
+[b站](https://www.bilibili.com/video/BV1bz421z7gj/?spm_id_from=333.999.0.0)
