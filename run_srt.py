@@ -48,7 +48,9 @@ if __name__ == "__main__":
     if "put wav files here.txt" in file_names:
         file_names.remove("put wav files here.txt")
     for i in tqdm(range(len(file_names))):
-        if not file_names[i].endswith(".wav"):
+        # bug fix one WAV尾缀的支持
+        if not (file_names[i].endswith(".wav") or file_names[i].endswith(".WAV")):
+        #if not file_names[i].endswith(".wav"):
             print(f"{file_names[i]}并不是支持的 wav 格式, skip...")
             continue
         main(wav_name=file_names[i].split(".")[0])
