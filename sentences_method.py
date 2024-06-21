@@ -11,7 +11,7 @@ def seg_sentences(sentences,cutline):
         latest_start = 0
         #print(sentence["ts_list"])
         for ts_index,start_end in enumerate(sentence["ts_list"]):
-            if start_end[0] - latest_end > 1000 and latest_end != 0:     # 这一个字的开始时间 - 上一个字的结束时间 > cutline
+            if start_end[0] - latest_end > cutline and latest_end != 0:     # 这一个字的开始时间 - 上一个字的结束时间 > cutline
                 cut_points.append((sentence_index, ts_index))
             latest_end = start_end[1]
             latest_start = start_end[0]
