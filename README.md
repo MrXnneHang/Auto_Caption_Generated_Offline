@@ -49,4 +49,4 @@ punc_ct-transformer_zh-cn-common-vocab272727-pytorch  2024.2
 
 
 
-**详细见:[字幕生成V2.1:更新介绍、Bug FixXnneHang's Blog](http://xnnehang.top/blog/27)**
+**详细见:[字幕生成V2.1:更新介绍、Bug Fix | XnneHang's Blog](http://xnnehang.top/blog/27)**
