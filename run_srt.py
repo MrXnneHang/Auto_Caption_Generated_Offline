@@ -2,20 +2,25 @@ import os
 from tqdm import tqdm
 from datetime import datetime
 from time_stamp import write_long_txt  # 带有时间戳的语音识别
-from short_text_to_long import convert_short_txt_to_long  # 合并那些原本是同义句但是被拆分成多句的句子，同时也合并他们的时间线
+from short_text_to_long import convert_short_txt_to_long  # 合并那些原本是同一句但是被拆分成多句的句子，同时也合并他们的时间线
 from txt_to_srt import convert_to_srt, remove_chinese_commas_and_periods
+from util import load_config
 
 def main(wav_name):
     print("开始语音识别")
+    config = load_config()
+    cut_line = config["cut_line"]
+    combine_line = config["combine_line"]
     with open("./hot_words.txt", 'r', encoding="utf-8") as f:
         lines = f.readlines()
     hot_words = ""
     for line in lines:
         hot_words += line.strip() + " "  # 不加换行, hotwords 不支持换行等分隔，只认空格，其他无效。
 
-    write_long_txt(wav_name=wav_name, cut_line=500000, hot_word=hot_words)  # ./tmp/.txt
+    write_long_txt(wav_name=wav_name, cut_line=cut_line, hot_word=hot_words)  # ./tmp/.txt
+    convert_short_txt_to_long(wav_name,combine_line=combine_line)
 
-    remove_chinese_commas_and_periods("./tmp/" + wav_name + ".txt", "./tmp/proc1.txt")
+    remove_chinese_commas_and_periods("./tmp/processed_" + wav_name + ".txt", "./tmp/proc1.txt")
     print("开始写入 srt")
 
     srt_content = convert_to_srt("./tmp/proc1.txt")
