@@ -34,3 +34,19 @@ punc_ct-transformer_zh-cn-common-vocab272727-pytorch  2024.2
 6.13对应V2版本   
 关于演示视频：    
 [b站](https://www.bilibili.com/video/BV1bz421z7gj/?spm_id_from=333.999.0.0)
+
+
+
+## 2024/6/21的更新:(主要是Bug-fix)
+
+1.部分用户转成.wav文件时是大写的.WAV，被认为不是支持的wav
+
+2.偶尔的吞字现象。
+
+3.cut_line未引用导致调整cut_line无效
+
+4.你可以在config.yml中调整cut_line和combine_line
+
+
+
+**详细见:[][字幕生成V2.1:更新介绍、Bug FixXnneHang's Blog](http://xnnehang.top/blog/27)**
