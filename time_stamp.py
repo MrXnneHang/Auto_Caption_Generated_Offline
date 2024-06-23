@@ -13,8 +13,8 @@ model = AutoModel(
 
 
 # 生成结果并写入文件
-def generate_results(wav_name, hot_word,debug=False):
-    res = model.generate(
+def generate_results(funasr_model,wav_name, hot_word,debug=False):
+    res = funasr_model.generate(
         input=f"./raw_audio/{wav_name}.wav",
         hotword=hot_word,
         batch_size_s=300,
@@ -25,7 +25,7 @@ def generate_results(wav_name, hot_word,debug=False):
 
 # 定义长文本写入函数
 def write_long_txt(wav_name, cut_line,hot_word,debug=False):
-    response = generate_results(wav_name=wav_name,hot_word=hot_word)
+    response = generate_results(funasr_model=model,wav_name=wav_name,hot_word=hot_word)
     if debug == True:
         print(response[0])
         print(remove_chinese_punctuation(response[0]["text"]))
