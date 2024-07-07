@@ -1,6 +1,7 @@
 from funasr import AutoModel
 from sentences_method import generate_new_sentences
 from automodel_rec_to_sentences import convert_format,remove_chinese_punctuation #把automodel 返回的rec转换成以前Pipline的格式。
+from automodel_rec_to_sentences import calculate_length,segment_text,split_into_words  #用来debug，检测两句是否一样长，是否有标点符号没去掉。
 
 # 定义模型
 model = AutoModel(
@@ -24,17 +25,22 @@ def generate_results(funasr_model,wav_name, hot_word,debug=False):
 
 
 # 定义长文本写入函数
-def write_long_txt(wav_name, cut_line,hot_word,debug=False):
+def write_long_txt(wav_name, cut_line,hot_word,debug=True):
     response = generate_results(funasr_model=model,wav_name=wav_name,hot_word=hot_word)
     if debug == True:
-        print(response[0])
-        print(remove_chinese_punctuation(response[0]["text"]))
-        print(len(remove_chinese_punctuation(response[0]["text"])),
-              len(response[0]["timestamp"]))  ##比对长度，如果不一样，说明有多余的未加入的符号。
-        ## 英文单词，不是按字母来算time_stamp的，而是按照单词来算time_stamp的，不管单词是不是有效。
-        ## 比如ablilly,koliyaal，这算两个词，占用两个time_stamp[start,end]x2
-        ## 因为有时候会识别出英文，所以需要让这个长度对齐。
-        print(response[0]["timestamp"])
+        # print(remove_chinese_punctuation(response[0]["text"]))
+        sentences = convert_format(response,debug=True)
+        sentences_length = 0
+        for sentence in sentences:
+            # 把英文单词作为一个汉字长度来计算。
+            sentences_length += calculate_length(sentence)
+        print(sentences,sentences_length,
+              len(response[0]["timestamp"]))
+        # 比对长度，如果不一样，说明有多余的未加入的符号。
+        # 英文单词，不是按字母来算time_stamp的，而是按照单词来算time_stamp的，不管单词是不是有效。
+        # 比如ablilly,koliyaal，这算两个词，占用两个time_stamp[start,end]x2
+        # 因为有时候会识别出英文，所以需要让这个长度对齐。
+        # print(response[0]["timestamp"])
     sentences = convert_format(response)
 
 
