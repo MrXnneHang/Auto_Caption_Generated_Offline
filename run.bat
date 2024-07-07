@@ -1,2 +1,2 @@
-.\env\python.exe run_srt.py
+.\env\python.exe run_srt.py 
 pause
