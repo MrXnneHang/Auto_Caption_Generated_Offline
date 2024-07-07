@@ -1,10 +1,12 @@
 import os
+import argparse
 from tqdm import tqdm
 from datetime import datetime
-from time_stamp import write_long_txt  # 带有时间戳的语音识别
+from time_stamp import write_long_txt_with_timestamp  # 带有时间戳的语音识别
 from short_text_to_long import convert_short_txt_to_long  # 合并那些原本是同一句但是被拆分成多句的句子，同时也合并他们的时间线
 from txt_to_srt import convert_to_srt, remove_chinese_commas_and_periods
-from util import load_config
+from util import load_config,write_long_txt
+
 
 def main(wav_name):
     print("开始语音识别")
@@ -17,23 +19,23 @@ def main(wav_name):
     for line in lines:
         hot_words += line.strip() + " "  # 不加换行, hotwords 不支持换行等分隔，只认空格，其他无效。
 
-    write_long_txt(wav_name=wav_name, cut_line=cut_line, hot_word=hot_words)  # ./tmp/.txt
-    convert_short_txt_to_long(wav_name,combine_line=combine_line)
-
-    remove_chinese_commas_and_periods("./tmp/processed_" + wav_name + ".txt", "./tmp/proc1.txt")
-    print("开始写入 srt")
-
+    response = write_long_txt_with_timestamp(wav_name=wav_name, cut_line=cut_line, hot_word=hot_words)  # ./tmp/.txt
+    date = write_long_txt(response)
+    convert_short_txt_to_long(wav_name, combine_line=combine_line)
+    remove_chinese_commas_and_periods(f"./tmp/processed_{wav_name}.txt", "./tmp/proc1.txt")
     srt_content = convert_to_srt("./tmp/proc1.txt")
-
     # 获取当前时间，并创建带时间戳的文件夹
-    timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M")
-    output_dir = os.path.join("./tmp", timestamp)
+    output_dir = os.path.join("./tmp", date)
     os.makedirs(output_dir, exist_ok=True)
 
     # 将 SRT 文件保存到带时间戳的文件夹中
     srt_path = os.path.join(output_dir, wav_name + ".srt")
     with open(srt_path, 'w', encoding='utf-8') as file:
         file.write(srt_content)
+
+
+
+
 
 if __name__ == "__main__":
     # 删除 ./tmp 下的所有 txt 文件，除了 generate will be here.txt
@@ -46,7 +48,7 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"Error deleting file {file_path}: {e}")
 
-    # 处理原始音频文件
+    # 处理 ./raw_audio 文件夹中的所有音频文件
     file_names = os.listdir("./raw_audio")
     if "desktop.ini" in file_names:
         file_names.remove("desktop.ini")
@@ -55,7 +57,6 @@ if __name__ == "__main__":
     for i in tqdm(range(len(file_names))):
         # bug fix one WAV尾缀的支持
         if not (file_names[i].endswith(".wav") or file_names[i].endswith(".WAV")):
-        #if not file_names[i].endswith(".wav"):
             print(f"{file_names[i]}并不是支持的 wav 格式, skip...")
             continue
         main(wav_name=file_names[i].split(".")[0])
