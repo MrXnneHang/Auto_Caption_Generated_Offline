@@ -50,3 +50,15 @@ punc_ct-transformer_zh-cn-common-vocab272727-pytorch  2024.2
 
 
 **详细见:[字幕生成V2.1:更新介绍、Bug Fix | XnneHang's Blog](http://xnnehang.top/blog/27)**
+
+
+
+## 2024/7/7的更新(主要是bug-fix)
+
+1.识别到英文的时候偶尔就会碰到List out of Index.
+
+2.可以在config.yml中更改device
+
+3.写入srt的时候顺便写入了whole_text
+
+**详细见：[字幕生成V2.2:Bug Fix,支持手动修改device，可选择文本标点恢复。 | XnneHang's Blog](http://xnnehang.top/blog/44)**
