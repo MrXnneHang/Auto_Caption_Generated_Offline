@@ -8,7 +8,7 @@ from txt_to_srt import convert_to_srt, remove_chinese_commas_and_periods
 from util import load_config,write_long_txt
 
 
-def main(wav_name):
+def main(wav_name,output_dir):
     print("开始语音识别")
     config = load_config()
     cut_line = config["cut_line"]
@@ -18,14 +18,11 @@ def main(wav_name):
     hot_words = ""
     for line in lines:
         hot_words += line.strip() + " "  # 不加换行, hotwords 不支持换行等分隔，只认空格，其他无效。
-
     response = write_long_txt_with_timestamp(wav_name=wav_name, cut_line=cut_line, hot_word=hot_words)  # ./tmp/.txt
-    date = write_long_txt(response)
+    write_long_txt(response=response,wav_name=wav_name,output_dir=output_dir)
     convert_short_txt_to_long(wav_name, combine_line=combine_line)
     remove_chinese_commas_and_periods(f"./tmp/processed_{wav_name}.txt", "./tmp/proc1.txt")
     srt_content = convert_to_srt("./tmp/proc1.txt")
-    # 获取当前时间，并创建带时间戳的文件夹
-    output_dir = os.path.join("./tmp", date)
     os.makedirs(output_dir, exist_ok=True)
 
     # 将 SRT 文件保存到带时间戳的文件夹中
@@ -47,7 +44,10 @@ if __name__ == "__main__":
                 os.remove(file_path)
             except Exception as e:
                 print(f"Error deleting file {file_path}: {e}")
-
+    # 获取当前时间，并创建带时间戳的文件夹
+    timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M")
+    output_dir = os.path.join("./tmp", timestamp)
+    os.makedirs(output_dir, exist_ok=True)
     # 处理 ./raw_audio 文件夹中的所有音频文件
     file_names = os.listdir("./raw_audio")
     if "desktop.ini" in file_names:
@@ -59,5 +59,5 @@ if __name__ == "__main__":
         if not (file_names[i].endswith(".wav") or file_names[i].endswith(".WAV")):
             print(f"{file_names[i]}并不是支持的 wav 格式, skip...")
             continue
-        main(wav_name=file_names[i].split(".")[0])
+        main(wav_name=file_names[i].split(".")[0],output_dir=output_dir)
     print("All processes were done!")

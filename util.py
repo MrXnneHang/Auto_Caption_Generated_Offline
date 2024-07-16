@@ -75,15 +75,11 @@ def generate_results(model,wav_name, hot_word="",debug=False):
 
     return res
 
-def write_long_txt(response):
 
-    # 获取当前时间，并创建带时间戳的文件夹
-    timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M")
-    output_dir = os.path.join("./tmp", timestamp)
-    os.makedirs(output_dir, exist_ok=True)
+def write_long_txt(response,wav_name,output_dir):
+
     print("开始保存文本")
     # 将 文本文件保存到带时间戳的文件夹中
-    srt_path = os.path.join(output_dir,"only_text.txt")
+    srt_path = os.path.join(output_dir,f"{wav_name}.txt")
     with open(srt_path, 'w', encoding='utf-8') as file:
         file.write(response[0]["text"])
-    return timestamp
