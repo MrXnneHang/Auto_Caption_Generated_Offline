@@ -62,3 +62,15 @@ punc_ct-transformer_zh-cn-common-vocab272727-pytorch  2024.2
 3.写入srt的时候顺便写入了whole_text
 
 **详细见：[字幕生成V2.2:Bug Fix,支持手动修改device，可选择文本标点恢复。 | XnneHang's Blog](http://xnnehang.top/blog/44)**
+
+
+
+## 2024/7/30更新:
+
+1.英文单词被拆开,字母被当成单词
+
+2.如果异常，不退出，继续执行。
+
+3.将batch_size_s改成可以修改的值。
+
+**详细见：[字幕生成V2.3 : 英文单词的兼容，batch_size的自定义. | XnneHang's Blog](http://xnnehang.top/blog/81)**
