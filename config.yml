@@ -1,0 +1,12 @@
+## 单位是毫秒
+
+batch_size_s: 300 # 批处理的大小，如果显存不够而爆显存，可以调小
+cut_line: 600  # 如果一个句子中，有两个字的间隔超过1000毫秒，以此把句子切成两句，防止长句过长
+combine_line: 400 # 如果两个字的间隔小于400毫秒，就把它们合并到一句，可以增加连贯性，同时合并一些语气词。
+punctuation_list: "，。；、？！,.;?!"
+
+base_model: "./models/speech_seaco_paraformer_large_asr_nat-zh-cn-16k-common-vocab8404-pytorch"  # base
+vad_model: "./models/speech_fsmn_vad_zh-cn-16k-common-pytorch" # 检测语音活动，自动分隔
+punc_model: "./models/punc_ct-transformer_zh-cn-common-vocab272727-pytorch"  # 标点恢复。
+
+device: "cuda"
