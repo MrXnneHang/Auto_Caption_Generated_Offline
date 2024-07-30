@@ -1,3 +1,25 @@
+import re
+
+
+def extract_words(text):
+    """如果text中存在单个空格，就replace成空，
+       如果text中存在连续多个空格，就replace成一个空格"""
+    text = re.sub(r'(?<! ) (?! )', '', text)
+    text_list = text.split(" ")
+    for t in text.split(" "): # 这里不能用text_list，因为text_list会变,导致循环出错(copilot 你好聪明)
+        if not t:
+            text_list.remove(t)
+        else:
+            text_list.remove(t)
+            # Split text into words and Chinese characters
+            t = re.findall(r'[a-zA-Z]+|[\u4e00-\u9fff]', t)
+            text_list.append(t)
+    """将text_list中的子列表合并成一个列表"""
+    text_list = [item for sublist in text_list for item in sublist]
+    return text_list
+
+
+
 def seg_sentences(sentences,cutline):
     all_cut_points_in_sentences = []
     new_texts_in_sentences = []
@@ -11,7 +33,7 @@ def seg_sentences(sentences,cutline):
         latest_start = 0
         #print(sentence["ts_list"])
         for ts_index,start_end in enumerate(sentence["ts_list"]):
-            if start_end[0] - latest_end > 1000 and latest_end != 0:     # 这一个字的开始时间 - 上一个字的结束时间 > cutline
+            if start_end[0] - latest_end > cutline and latest_end != 0:     # 这一个字的开始时间 - 上一个字的结束时间 > cutline
                 cut_points.append((sentence_index, ts_index))
             latest_end = start_end[1]
             latest_start = start_end[0]
@@ -45,19 +67,40 @@ def seg_sentences(sentences,cutline):
                 ## cut texts
                 if index != 0:
                     for n in range(cut_points[index-1][1],cut_points[index][1]):
-                        left_text+=sentence["text_seg"][n*2]
+                        # print("part1")
+                        # if extract_words(sentence["text_seg"]):
+                        #     print(extract_words(sentence["text_seg"]))
+                        #     print(sentence["text_seg"])
+                        # else:
+                        #     print(sentence["text_seg"])
+                        # print(n)
+                        left_text+=extract_words(sentence["text_seg"])[n]
+
                     new_texts.append(left_text)
                     # print(f"拆分短句1:{left_text}")
                     left_text="" ## 防止被叠加
                 else:
                     for n in range(cut_point[1]):
-                        left_text+=sentence["text_seg"][n*2]
+                        # print("part2")
+                        # if extract_words(sentence["text_seg"]):
+                        #     print(extract_words(sentence["text_seg"]))
+                        #     print(sentence["text_seg"])
+                        # else:
+                        #     print(sentence["text_seg"])
+                        # print(n)
+                        left_text+=extract_words(sentence["text_seg"])[n]
                     new_texts.append(left_text)
                     # print(f"拆分短句2:{left_text}")
                     left_text=""
                 last_text=""
-                for n in range(cut_points[-1][1],len(sentence["text"])-1):
-                    last_text+=sentence["text_seg"][n*2]
+                for n in range(cut_points[-1][1],len(extract_words(sentence["text_seg"]))):
+                    # print("part3")
+                    # if extract_words(sentence["text_seg"]):
+                    #     print(extract_words(sentence["text_seg"]))
+                    # else:
+                    #     print(sentence["text_seg"])
+                    # print(n)
+                    last_text+=extract_words(sentence["text_seg"])[n]
             new_texts.append(last_text)
             # print(f"拆分短句3:{last_text}")
             print(f"新短句:{new_texts}")

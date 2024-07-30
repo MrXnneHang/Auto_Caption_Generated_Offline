@@ -1,24 +1,23 @@
 # -*- coding: utf-8 -*-
 
 import re
+from util import  load_config
 ## 要去除的符号
-pop_list = "，。；、？！,.;!?" #记得同步更改segment_text的和remove函数
+# 加载配置
+config = load_config()
+pop_list = config['punctuation_list']
+
+
 def segment_text(text):
     """
     将文本按照标点符号分割成句子列表
     """
-    #print("======")
-    #print(text)
-    #print("========")
-    sentences = re.split(r'([，。；、？！,.;?!])', text)
-    # print("------")
-    # print(sentences)
-    # print(len(sentences))
-    # print("------")
+    # 移除 pop_list 中的单引号以处理其他标点符号
+    pop_list_no_single_quote = pop_list.replace("'", "")
+    # 使用负向先行断言和负向后行断言确保单引号左右为字母时不分割
+    pattern = f"(?<![a-zA-Z])'|'(?![a-zA-Z])|([{pop_list_no_single_quote}])"
+    sentences = re.split(pattern, text)
     sentences = [s for s in sentences if s.strip()]  # 去除空白元素
-    #print("======")
-    #print(sentences)
-    #print("========")
     return sentences
 
 
@@ -26,17 +25,16 @@ def split_into_words(text):
     """
     将句子分割成单个汉字和单词，保留标点符号
     """
-    words = remove_chinese_punctuation(text)
-    # 正则表达式用于匹配英文单词、汉字和标点符号
-    pattern = re.compile(r'[a-zA-Z]+|[\u4e00-\u9fa5]|[^\u4e00-\u9fa5a-zA-Z\s]')
+    # 移除标点符号，但保留英文缩写
+    text_without_punctuation = remove_chinese_punctuation(text)
+
+    # 正则表达式用于匹配英文单词、汉字、标点符号和英文缩写
+    pattern = re.compile(r"[a-zA-Z]+(?:'[a-zA-Z]+)?|[\u4e00-\u9fa5]|[^\u4e00-\u9fa5a-zA-Z\s]")
 
     # 使用 findall 方法找到所有匹配的部分
     words = pattern.findall(text)
-    #print(words)
-    #words = remove_chinese_punctuation(words)
 
     return words
-
 
 def match_timestamps_to_words(text, timestamps):
     """
@@ -64,7 +62,7 @@ def calculate_length(texts):
         length += 1
     return length
 
-def convert_format(input_data):
+def convert_format(input_data,debug=False):
     results = []
     for item in input_data:
         key = item['key']
@@ -80,28 +78,26 @@ def convert_format(input_data):
                 #print(sentence,i)
                 i+=1
                 continue
+            if debug == True:
+                results.append(sentence)
+            else:
+                ts_list = timestamps[current_ts_idx:current_ts_idx + len(sentence)]
+                text_seg = ' '.join(sentence)
+                start = ts_list[0][0]
+                end = ts_list[-1][1]
+                matched_ts_list = match_timestamps_to_words(sentence, ts_list)
 
-            ts_list = timestamps[current_ts_idx:current_ts_idx + len(sentence)]
-            text_seg = ' '.join(sentence)
-            #print("======")
-            #print(timestamps)
-            #print("======")
-            #break
-            start = ts_list[0][0]
-            end = ts_list[-1][1]
-            matched_ts_list = match_timestamps_to_words(sentence, ts_list)
-
-            result_item = {
-                'text': sentence,
-                'start': start,
-                'end': end,
-                'text_seg': text_seg,
-                'ts_list': matched_ts_list
-            }
+                result_item = {
+                    'text': sentence,
+                    'start': start,
+                    'end': end,
+                    'text_seg': text_seg,
+                    'ts_list': matched_ts_list
+                }
 
 
-            results.append(result_item)
-            current_ts_idx += calculate_length(sentence)
+                results.append(result_item)
+                current_ts_idx += calculate_length(sentence)
 
     return results
 
@@ -114,7 +110,7 @@ def remove_chinese_punctuation(text):
     """
     测试移除文本中的中文标点符号：，。？！、
     """
-    return re.split(r'([，。；、？！,.;?!])', text)
+    return re.split(f'([{pop_list}])', text)
     ##如果碰到list_out_ofindex,可以打印一下看看是否有什么多余的符号。需要保证，time_stamp的长度==text长度
 
 if __name__ == "__main__":
