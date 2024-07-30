@@ -6,7 +6,7 @@
 
 Models 会自动下载，不过会下到C盘的User用户路径下，如果有需要自己配置环境的,可以手动下载然后放到当前根目录的Model下方。
 
-环境配置见:https://github.com/modelscope/FunASR
+###  环境配置见:https://github.com/modelscope/FunASR
 
 
 
@@ -28,7 +28,37 @@ punc_ct-transformer_zh-cn-common-vocab272727-pytorch  2024.2
 **注意：**  
 请不要在旧版本环境基础上构建新版本代码，旧版本的funasr不支持AutoModel模块，而新版本代码去掉了以前pipline的inference，可以自由搭配模型。  
 
-你可以自己在modelscope中下载模型然后放在./models 下方。或者使用我们的整合包。   
-待上传，不出意外应该是百度网盘  
+你可以自己在modelscope中下载模型然后放在./models 下方。或者使用我们的整合包。    
+链接：https://pan.baidu.com/s/1_RUIsaaAJkfx1EsJlbdv3A?pwd=4v4e   
+提取码：4v4e    
+6.13对应V2版本   
 关于演示视频：    
-待制作  
+[b站](https://www.bilibili.com/video/BV1bz421z7gj/?spm_id_from=333.999.0.0)
+
+
+
+## 2024/6/21的更新:(主要是Bug-fix)
+
+1.部分用户转成.wav文件时是大写的.WAV，被认为不是支持的wav
+
+2.偶尔的吞字现象。
+
+3.cut_line未引用导致调整cut_line无效
+
+4.你可以在config.yml中调整cut_line和combine_line
+
+
+
+**详细见:[字幕生成V2.1:更新介绍、Bug Fix | XnneHang's Blog](http://xnnehang.top/blog/27)**
+
+
+
+## 2024/7/7的更新(主要是bug-fix)
+
+1.识别到英文的时候偶尔就会碰到List out of Index.
+
+2.可以在config.yml中更改device
+
+3.写入srt的时候顺便写入了whole_text
+
+**详细见：[字幕生成V2.2:Bug Fix,支持手动修改device，可选择文本标点恢复。 | XnneHang's Blog](http://xnnehang.top/blog/44)**
