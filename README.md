@@ -74,3 +74,9 @@ punc_ct-transformer_zh-cn-common-vocab272727-pytorch  2024.2
 3.将batch_size_s改成可以修改的值。
 
 **详细见：[字幕生成V2.3 : 英文单词的兼容，batch_size的自定义. | XnneHang's Blog](http://xnnehang.top/blog/81)**
+
+
+##  更新预告:
+1.部分使用者反馈mp4 -> wav 的时候，wav比mp4短，导致字幕偏移. fix
+2.用tk制作一个简单的交互ui,支持直接拖入mp4并且->srt和txt。届时需要额外install一些依赖，比如ffmpeg和extra_requirements.txt。
+感谢bilibili@是谁住在深海的大菠萝屋里,贡献了大部分代码。
