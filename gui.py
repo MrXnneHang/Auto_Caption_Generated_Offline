@@ -5,12 +5,14 @@ import tkinter as tk
 from tkinter import ttk
 from tkinterdnd2 import TkinterDnD, DND_FILES
 import queue
-from util import load_config
+from util import load_config  # Ensure this module is available or remove it
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from tqdm import tqdm
+import time
+
 # 设置ffmpeg的路径
 FFMPEG_PATH = r"D:\program\字幕生成V2\ffmpeg-master-latest-win64-gpl-shared\bin\ffmpeg.exe"
 max_workers = 1  # 可以根据需要调整并发线程数
+
 class AudioExtractorApp:
     def __init__(self, root):
         self.root = root
@@ -35,6 +37,8 @@ class AudioExtractorApp:
         
         # Handle window close event
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.drop_files_process_index = 0
+        self.drop_files_len = 0
 
     def create_widgets(self):
         self.video_paths = []
@@ -48,22 +52,31 @@ class AudioExtractorApp:
         self.progress_bar.pack(fill=tk.X, expand=1, padx=20, pady=20)
         self.progress_label = tk.Label(self.root, text="")
         
-        self.extract_button = tk.Button(self.root, text="提取音频", command=self.start_extract_audio)
-        self.convert_button = tk.Button(self.root, text="提取字幕", command=self.start_extract_caption)
+        self.convert_button = tk.Button(self.root, text="提取字幕", command=self.start)
         
-        self.extract_button.pack(pady=20)
-        self.convert_button.pack(pady=5)
+        self.convert_button.pack(pady=20)
 
     def drop_videos(self, event):
         files = self.root.tk.splitlist(event.data)
         for file in files:
             self.video_paths.append(file.strip('{}'))
             self.video_listbox.insert(tk.END, file.strip('{}'))
+        self.drop_files_len = len(files)
+
+    def start(self):
+        self.start_extract_audio()
+        threading.Thread(target=self.wait_for_audio_extraction).start()
+
+    def wait_for_audio_extraction(self):
+        while True:
+            if self.audio_extracted:
+                self.start_extract_caption()
+                break
+            print("等待提取字幕...")
+            time.sleep(1)
 
     def start_extract_caption(self):
-        if not self.audio_paths:
-            return
-
+        print(self.audio_paths)
         total_files = len(self.audio_paths)
         self.progress_var.set(0)
         futures = {self.executor.submit(self.extract_subtitle, audio_path): audio_path for audio_path in self.audio_paths}
@@ -79,6 +92,7 @@ class AudioExtractorApp:
 
         # 在单独的线程中运行update_progress，以免阻塞GUI
         threading.Thread(target=update_progress).start()
+        return 1
 
     def start_extract_audio(self):
         if not self.video_paths:
@@ -110,6 +124,7 @@ class AudioExtractorApp:
         except queue.Empty:
             pass
         self.root.after(100, self.update_progress_loop)
+
     def extract_audio(self, video_path):
         if not os.path.isfile(video_path):
             self.progress_queue.put((video_path, "文件不存在", 0))
@@ -151,10 +166,17 @@ class AudioExtractorApp:
         
         except subprocess.CalledProcessError as e:
             self.progress_queue.put((video_path, f"发生错误: {video_path}", 0))
-        """如果output_path存在,则添加到audio_paths，并且删除video_paths中的video_path,但不删除源文件"""
+
+        # 如果output_path存在, 则添加到audio_paths，并且删除video_paths中的video_path,但不删除源文件
         if os.path.exists(output_path):
             self.audio_paths.append(output_path)
         self.video_paths.remove(video_path)
+
+        # 将该video_path从self.video_listbox中去除
+        video_index = self.video_listbox.get(0, tk.END).index(video_path)
+        self.video_listbox.delete(video_index)
+
+        self.drop_files_process_index += 1
     def extract_subtitle(self,file_path):
         """如果extract_audio未结束,则打印等待extract_audio结束"""
         if self.video_paths:
