@@ -1,0 +1,3 @@
+# 对于基础的环境部署,关于pytorch,funasr等参见README。
+tkinterdnd2
+pyaml
