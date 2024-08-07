@@ -186,39 +186,42 @@ class AudioExtractorApp:
             return
         """如果extract_audio结束,则开始提取字幕"""
         print("开始语音识别")
-        config = load_config()
-        cut_line = config["cut_line"]
-        combine_line = config["combine_line"]
-        with open("./hot_words.txt", 'r', encoding="utf-8") as f:
-            lines = f.readlines()
-        hot_words = ""
-        for line in lines:
-            hot_words += line.strip() + " "  # 不加换行, hotwords 不支持换行等分隔，只认空格，其他无效。
-        base_name,txt_path = write_long_txt_with_timestamp_filepath_input(file_path=file_path, cut_line=cut_line, hot_word=hot_words)  # ./tmp/.txt
-        convert_short_txt_to_long(base_name, combine_line=combine_line)
-        # 恢复标点
-        Model = FunASRModel()
-        puc_model = Model.only_puc()
-        self.ignore_timestamp(f"./tmp/processed_{base_name}.txt", txt_path.replace("_combined.txt","_split.txt"))
-        res = puc_model.generate(
-            input=txt_path.replace("_combined.txt","_split.txt"),
-            batch_size_s=config["batch_size_s"],
-        )
-        print(res)
-        puc_str_list = []
-        for r in res:
-            puc_str_list.append(r["text"])
-        self.recover_timestamp(puc_str_list=puc_str_list,timestamp_txt=f"./tmp/processed_{base_name}.txt",output_file_path="./tmp/proc1.txt")
-        self.add_puc_to_split_txt(none_punc_txt=txt_path.replace("_combined.txt","_split.txt"),punc_str_list=puc_str_list)
-        # 移除标点。
-        # remove_chinese_commas_and_periods(f"./tmp/processed_{base_name}.txt", "./tmp/proc1.txt")
-        srt_content = convert_to_srt("./tmp/proc1.txt")
-        """将file_path的endwith改成.srt作为srt_path"""
-        srt_path = file_path[:-4]+".srt"
-        with open(srt_path, 'w', encoding='utf-8') as file:
-            file.write(srt_content)
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        try:
+            config = load_config()
+            cut_line = config["cut_line"]
+            combine_line = config["combine_line"]
+            with open("./hot_words.txt", 'r', encoding="utf-8") as f:
+                lines = f.readlines()
+            hot_words = ""
+            for line in lines:
+                hot_words += line.strip() + " "  # 不加换行, hotwords 不支持换行等分隔，只认空格，其他无效。
+            base_name,txt_path = write_long_txt_with_timestamp_filepath_input(file_path=file_path, cut_line=cut_line, hot_word=hot_words)  # ./tmp/.txt
+            convert_short_txt_to_long(base_name, combine_line=combine_line)
+            # 恢复标点
+            Model = FunASRModel()
+            puc_model = Model.only_puc()
+            self.ignore_timestamp(f"./tmp/processed_{base_name}.txt", txt_path.replace("_combined.txt","_split.txt"))
+            res = puc_model.generate(
+                input=txt_path.replace("_combined.txt","_split.txt"),
+                batch_size_s=config["batch_size_s"],
+            )
+            print(res)
+            puc_str_list = []
+            for r in res:
+                puc_str_list.append(r["text"])
+            self.recover_timestamp(puc_str_list=puc_str_list,timestamp_txt=f"./tmp/processed_{base_name}.txt",output_file_path="./tmp/proc1.txt")
+            self.add_puc_to_split_txt(none_punc_txt=txt_path.replace("_combined.txt","_split.txt"),punc_str_list=puc_str_list)
+            # 移除标点。
+            # remove_chinese_commas_and_periods(f"./tmp/processed_{base_name}.txt", "./tmp/proc1.txt")
+            srt_content = convert_to_srt("./tmp/proc1.txt")
+            """将file_path的endwith改成.srt作为srt_path"""
+            srt_path = file_path[:-4]+".srt"
+            with open(srt_path, 'w', encoding='utf-8') as file:
+                file.write(srt_content)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            print(f"Error processing {file_path}: {e}")
 
 
     def calculate_progress(self, output):
