@@ -9,19 +9,20 @@ from util import load_config  # Ensure this module is available or remove it
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
+config = load_config()
 # 设置ffmpeg的路径
-FFMPEG_PATH = r"D:\program\字幕生成V2\ffmpeg-master-latest-win64-gpl-shared\bin\ffmpeg.exe"
-max_workers = 1  # 可以根据需要调整并发线程数
+FFMPEG_PATH = config["FFMPEG_PATH"]
+max_workers = config["max_workers"]
 
 class AudioExtractorApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("视频转音频提取器")
+        self.root.title("字幕生成测试")
         self.root.geometry("600x400")
         
         self.max_workers = 1
         self.executor = ThreadPoolExecutor(max_workers=self.max_workers)
-        
+        self.config = load_config()
         self.progress_var = tk.DoubleVar()
         self.lock = threading.Lock()
         self.create_widgets()
@@ -178,6 +179,7 @@ class AudioExtractorApp:
 
         self.drop_files_process_index += 1
     def extract_subtitle(self,file_path):
+
         """如果extract_audio未结束,则打印等待extract_audio结束"""
         if self.video_paths:
             print("等待音频提取完成")
@@ -192,14 +194,32 @@ class AudioExtractorApp:
         hot_words = ""
         for line in lines:
             hot_words += line.strip() + " "  # 不加换行, hotwords 不支持换行等分隔，只认空格，其他无效。
-        base_name = write_long_txt_with_timestamp_filepath_input(file_path=file_path, cut_line=cut_line, hot_word=hot_words)  # ./tmp/.txt
+        base_name,txt_path = write_long_txt_with_timestamp_filepath_input(file_path=file_path, cut_line=cut_line, hot_word=hot_words)  # ./tmp/.txt
         convert_short_txt_to_long(base_name, combine_line=combine_line)
-        remove_chinese_commas_and_periods(f"./tmp/processed_{base_name}.txt", "./tmp/proc1.txt")
+        # 恢复标点
+        Model = FunASRModel()
+        puc_model = Model.only_puc()
+        self.ignore_timestamp(f"./tmp/processed_{base_name}.txt", txt_path.replace("_combined.txt","_split.txt"))
+        res = puc_model.generate(
+            input=txt_path.replace("_combined.txt","_split.txt"),
+            batch_size_s=config["batch_size_s"],
+        )
+        print(res)
+        puc_str_list = []
+        for r in res:
+            puc_str_list.append(r["text"])
+        self.recover_timestamp(puc_str_list=puc_str_list,timestamp_txt=f"./tmp/processed_{base_name}.txt",output_file_path="./tmp/proc1.txt")
+        self.add_puc_to_split_txt(none_punc_txt=txt_path.replace("_combined.txt","_split.txt"),punc_str_list=puc_str_list)
+        # 移除标点。
+        # remove_chinese_commas_and_periods(f"./tmp/processed_{base_name}.txt", "./tmp/proc1.txt")
         srt_content = convert_to_srt("./tmp/proc1.txt")
         """将file_path的endwith改成.srt作为srt_path"""
         srt_path = file_path[:-4]+".srt"
         with open(srt_path, 'w', encoding='utf-8') as file:
             file.write(srt_content)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
 
     def calculate_progress(self, output):
         # 根据实际情况计算进度，这里只是一个示例
@@ -208,6 +228,68 @@ class AudioExtractorApp:
     def update_progress(self, video_path, message, progress):
         self.progress_label.config(text=video_path if not message else message)
         self.progress_bar['value'] = progress
+    def ignore_timestamp(self,input_file_path,output_file_path):
+        """
+        @input:
+        68980|69965|宝箱快藏好
+        79390|80345|哇被你炒了
+        81410|81755|好了
+        @output:
+        1\t宝箱快藏好
+        2\t哇被你炒了
+        3\t好了
+        """
+        with open(input_file_path, 'r', encoding='utf-8') as file:
+            lines = file.readlines()
+        with open(output_file_path, 'w', encoding='utf-8') as file:
+            for index, line in enumerate(lines):
+                parts = line.split("|")
+                content = parts[2]
+                file.write(f"{index+1}\t{content}")
+    def recover_timestamp(self,puc_str_list,timestamp_txt,output_file_path):
+        """
+        @input:
+        puc_str_list:
+        ["宝箱快藏好。", "哇被你炒了。", "好了。"]
+        timestamp_txt:
+        68980|69965|宝箱快藏好
+        79390|80345|哇被你炒了
+        81410|81755|好了
+        @output:
+        output_file_path:
+        68980|69965|宝箱快藏好。
+        79390|80345|哇被你炒了。
+        81410|81755|好了。
+        """
+        with open(timestamp_txt, 'r', encoding='utf-8') as file:
+            lines = file.readlines()
+        with open(output_file_path, 'w', encoding='utf-8') as file:
+            for index, line in enumerate(lines):
+                parts = line.split("|")
+                content = parts[2]
+                file.write(f"{parts[0]}|{parts[1]}|{puc_str_list[index]}\n")
+    def add_puc_to_split_txt(self,punc_str_list,none_punc_txt):
+        """
+        @input:
+        none_punc_txt:
+        1\t宝箱快藏好
+        2\t哇被你炒了
+        3\t好了
+        punc_str_list:
+        ["宝箱快藏好。", "哇被你炒了。", "好了。"]
+        @output:
+        覆盖掉none_punc_txt:
+        1\t宝箱快藏好。
+        2\t哇被你炒了。
+        3\t好了。
+        """
+        lines = punc_str_list
+        with open(none_punc_txt,'w',encoding='utf-8') as file:
+            for index,line in enumerate(lines):
+                file.write(f"{index+1}\t{line}\n")
+
+        
+        
 
     def update_progress_loop(self):
         try:
@@ -268,10 +350,10 @@ def write_long_txt_with_timestamp_filepath_input(file_path, cut_line,hot_word,de
     write_lines_to_file(f'./tmp/{base_name}.txt', lines)
     print("开始保存文本")
     # 将 文本文件保存到带时间戳的文件夹中
-    txt_path = file_path[:-4]+".txt"
+    txt_path = file_path[:-4]+"_combined.txt"
     with open(txt_path, 'w', encoding='utf-8') as file:
         file.write(response[0]["text"])
-    return base_name
+    return base_name,txt_path
 
 
 
