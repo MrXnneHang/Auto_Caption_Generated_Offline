@@ -10,3 +10,6 @@ vad_model: "./models/speech_fsmn_vad_zh-cn-16k-common-pytorch" # 检测语音活
 punc_model: "./models/punc_ct-transformer_zh-cn-common-vocab272727-pytorch"  # 标点恢复。
 
 device: "cuda"
+
+FFMPEG_PATH: "./ffmpeg-master-latest-win64-gpl-shared/bin/ffmpeg.exe"
+max_workers: 1  # 可以根据需要调整并发线程数
