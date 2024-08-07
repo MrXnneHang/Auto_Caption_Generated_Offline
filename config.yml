@@ -13,3 +13,4 @@ device: "cuda"
 
 FFMPEG_PATH: "./ffmpeg-master-latest-win64-gpl-shared/bin/ffmpeg.exe"
 max_workers: 1  # 可以根据需要调整并发线程数
+# 建议设置成1,>1的话，会一次转录多个音频->字幕。可能你的显卡挨不住。
