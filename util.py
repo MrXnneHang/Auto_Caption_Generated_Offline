@@ -45,6 +45,10 @@ class FunASRModel:
     def only_txt(self):
         model = AutoModel(model = self.base_model,
                           device=self.device)
+    def only_puc(self):
+        model = AutoModel(model = self.punc_model,
+                          device=self.device)
+        return model
 
 
 def generate_results(model,wav_name, hot_word="",debug=False):
