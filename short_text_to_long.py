@@ -1,6 +1,9 @@
 from time_stamp import write_lines_to_file
+from util import load_config
 
 def convert_short_txt_to_long(wav_name, combine_line):
+    config = load_config()
+    max_sentence_length = config['max_sentence_length']
     latest_start = 0
     latest_end = 0
     latest_content = ""
@@ -15,7 +18,7 @@ def convert_short_txt_to_long(wav_name, combine_line):
             content = parts[2]
 
             # 检查是否需要合并
-            if (start - latest_end < combine_line) and (latest_end != 0) and (len(latest_content)<20 or len(content)<5):
+            if (start - latest_end < combine_line) and (latest_end != 0) and (len(latest_content)<max_sentence_length or len(content)<5):
                 # 合并行
                 latest_content = latest_content.replace('\n', '')
                 new_line = f"{latest_start}|{end}|{latest_content}{content}"
@@ -36,7 +39,7 @@ def convert_short_txt_to_long(wav_name, combine_line):
                 latest_content = content
 
             # 调试打印，查看每行的处理结果
-            print(f"Processed line: {new_line}")
+            # print(f"Processed line: {new_line}")
 
     # 删除单独占行的回车 '\n'
     result = []

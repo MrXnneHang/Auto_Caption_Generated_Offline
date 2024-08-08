@@ -14,3 +14,5 @@ device: "cuda"
 FFMPEG_PATH: "./ffmpeg-master-latest-win64-gpl-shared/bin/ffmpeg.exe"
 max_workers: 1  # 可以根据需要调整并发线程数
 # 建议设置成1,>1的话，会一次转录多个音频->字幕。可能你的显卡挨不住。
+need_punc: True  # 是否需要标点恢复
+max_sentence_length: 20  # 句子长度限制，一般不会超过这个值。但非绝对，可以根据需要调整，文档整理时，可以调大一些（20），只是作为配音字幕，可以调小一些（10）。
