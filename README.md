@@ -76,7 +76,16 @@ punc_ct-transformer_zh-cn-common-vocab272727-pytorch  2024.2
 **详细见：[字幕生成V2.3 : 英文单词的兼容，batch_size的自定义. | XnneHang's Blog](http://xnnehang.top/blog/81)**
 
 
-##  更新预告:
-1.部分使用者反馈mp4 -> wav 的时候，wav比mp4短，导致字幕偏移. fix  
-2.用tk制作一个简单的交互ui,支持直接拖入mp4并且->srt和txt。届时需要额外install一些依赖，比如ffmpeg和extra_requirements.txt。  
-感谢bilibili@是谁住在深海的大菠萝屋里,贡献了大部分代码。  
+##  2024/8/8更新:『Important』
+1.修复了7/30引入了一个大bug:convert short text to long 吞句子现象。
+
+2.修复某些mp4转录wav后可能长度和wav不一致导致字幕偏移。
+
+3.提供GUI
+
+4.标点可以选择保留
+
+5.合并了7/30:V2.3的第0个Issue，英文单词被拆分成字母
+
+**详细见：[字幕生成V2.3-Stable : 吞句子现象fix,mp4原因导致字幕偏移音画不同步fix,提供GUI，支持保留标点和限制句子长度。 | XnneHang's Blog](http://xnnehang.top/blog/92)**
+
