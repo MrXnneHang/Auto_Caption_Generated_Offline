@@ -103,6 +103,8 @@ async def handle_conversation_trigger(
         current_task = current_conversation_tasks.get(uid)
         if current_task is completed_task:
             current_conversation_tasks.pop(uid, None)
+        if not completed_task.cancelled() and completed_task.exception() is not None:
+            logger.error("Conversation task for {} failed: {}", uid, completed_task.exception())
 
     task.add_done_callback(_clear_finished_task)
 

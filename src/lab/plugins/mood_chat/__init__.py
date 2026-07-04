@@ -480,6 +480,10 @@ class MoodChatPlugin(HookPlugin):
             self._arm_proactive_timer()
         except asyncio.CancelledError:
             raise
+        except Exception as e:
+            plugin_logger.error(f"[MOOD_CHAT] proactive turn failed: {e}")
+            if not self._stopped:
+                self._arm_proactive_timer()
         finally:
             if self._proactive_timer_task is current_task:
                 self._proactive_timer_task = None

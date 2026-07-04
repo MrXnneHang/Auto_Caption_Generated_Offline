@@ -62,13 +62,9 @@ class AsyncLLM:
         _no_proxy = "localhost" in base_url or "127.0.0.1" in base_url
         if _no_proxy:
             logger.info(f"AsyncLLM: {base_url} is local, bypassing system proxy")
-            _http_client = httpx.AsyncClient(trust_env=False)
+            _http_client: httpx.AsyncClient | None = httpx.AsyncClient(trust_env=False)
         else:
-            # 远程代理可能 keep-alive 超时较短，禁用连接复用避免 stale connection
-            _http_client = httpx.AsyncClient(
-                http2=True,
-                limits=httpx.Limits(keepalive_expiry=10),
-            )
+            _http_client = None
 
         self.client = AsyncOpenAI(
             base_url=base_url,
@@ -188,15 +184,37 @@ class AsyncLLM:
             tool_choice=tool_choice,
         )
 
-        stream = cast("AsyncStream[ChatCompletionChunk]", await self.client.chat.completions.create(**kwargs))
+        stream: AsyncStream[ChatCompletionChunk] | None = None
         try:
+            stream = cast(
+                "AsyncStream[ChatCompletionChunk]",
+                await self.client.chat.completions.create(**kwargs),
+            )
             async for chunk in stream:
                 yield chunk
+
+        except APIConnectionError as e:
+            logger.error(
+                "Connection error calling chat endpoint (stream_with_tools). "
+                f"Check base_url/api_key and LLM backend reachability. {e.__cause__}"
+            )
+            raise
+
+        except RateLimitError as e:
+            logger.error(f"Rate limit exceeded (stream_with_tools): {e.response}")
+            raise
+
+        except APIError as e:
+            logger.error(f"LLM API error (stream_with_tools): {e}")
+            logger.info(f"base_url={self.base_url} model={self.model} temperature={self.temperature}")
+            raise
+
         finally:
-            try:
-                await stream.close()
-            except Exception:
-                pass
+            if stream is not None:
+                try:
+                    await stream.close()
+                except Exception:
+                    pass
 
     async def vision_completion_once(
         self,
