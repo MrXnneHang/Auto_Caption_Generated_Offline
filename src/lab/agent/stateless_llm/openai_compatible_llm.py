@@ -194,9 +194,9 @@ class AsyncLLM:
                 yield chunk
 
         except APIConnectionError as e:
-            logger.error(
+            logger.opt(exception=e).error(
                 "Connection error calling chat endpoint (stream_with_tools). "
-                f"Check base_url/api_key and LLM backend reachability. {e.__cause__}"
+                "Check base_url/api_key and LLM backend reachability."
             )
             raise
 
