@@ -27,8 +27,8 @@ XnneHangLab/
 │   ├── state/                    #   Checkpoints, qdrant storage, state.sqlite
 │   ├── logs/                     #   Execution traces and exports
 │   └── tests/                    #   Memory bench tests (pytest)
-├── frontend/                     # [submodule] Electron + React UI → see frontend/CLAUDE.md
-├── launcher/                     # [submodule] Vite-based launcher
+├── frontend/                     # [submodule] Electron + React UI (main branch: xnne-dev) → see frontend/AGENTS.md
+├── launcher/                     # [submodule] Tauri 2 desktop launcher (main branch: main) → see launcher/AGENTS.md
 ├── packages/                     # [submodule] Local workspace members
 │   ├── Qwen3-ASR/                #   Qwen ASR (OpenVINO)
 │   ├── GSV-TTS-Lite/             #   GPT-SoVITS TTS
