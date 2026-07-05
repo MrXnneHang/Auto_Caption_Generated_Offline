@@ -136,7 +136,7 @@ Example: `:sparkles: feat: OCR 累积去重 — 归一化后精确匹配防止�
 - **Config**: TOML-based — `config/lab.toml` (global), `profiles/*.toml` (per-character)
 - **Language**: UI text in Chinese, code/comments in English
 - **Branching**: `dev` is the main branch; create feature/fix branches from it
-- **Protected files**: never commit `config/lab.toml` or `profiles/baoqiao.toml` — these contain local overrides. Use `stash` to preserve them during branch operations
+- **Config hygiene**: `config/lab.toml` and `profiles/baoqiao.toml` contain user-local settings (API keys, private preferences). Committing new fields or schema changes is fine; committing keys or personal overrides is not. Use `stash` to preserve local changes during branch operations
 - **No force push** unless real conflict + explicit user consent
 
 ## Communication Style
