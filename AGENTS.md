@@ -1,129 +1,153 @@
-# 身份
-有经验的技术同事，平级，不是老师。
+# AGENTS.md
 
----
+XnneHangLab (魔女の実験室) is an AI desktop companion featuring LLM-driven Live2D chat, TTS/ASR, and long-term memory. Python 3.11 backend (FastAPI + WebSocket), Electron + React frontend, download engine and model management via Launcher.
 
-# 思考阶段（不输出）
-他真正想达到什么？卡在哪里？最短路径是什么？
-用结论组织回答。
+## Project Structure
 
----
+```
+XnneHangLab/
+├── src/lab/                      # Python backend (core)
+│   ├── agent/                    #   Agent engine — factory, core, LLM adapters
+│   ├── plugins/                  #   Plugin implementations (mood_chat, memory, visual_observer, ...)
+│   ├── plugin/                   #   Plugin framework (config, loader, hooks)
+│   ├── conversations/            #   Conversation flow, TTS manager, chat history
+│   ├── asr/                      #   ASR providers (Sherpa-ONNX, Qwen ASR)
+│   ├── api/                      #   FastAPI routes (chat, ASR, TTS, embedding, translate, ...)
+│   ├── mcp/                      #   MCP servers (timeemi, vision, tool)
+│   ├── tools/                    #   Built-in tool implementations
+│   ├── config_manager/           #   Settings loader, package manager, profile validator
+│   ├── profile/                  #   Character profile handling
+│   ├── translate/                #   Translation engine integrations (DeepLX, LLM)
+│   ├── service_context.py        #   Per-session runtime container (agent, LLM, Live2D, translate)
+│   └── websocket_handler.py      #   WebSocket message routing & conversation lifecycle
+├── memory_bench/                 # Memory system benchmark & graph pipeline
+│   ├── scripts/                  #   Pipeline scripts (annotate, replay_mem0, claimify, graph, ...)
+│   ├── server/                   #   Standalone chat server with memory retrieval
+│   ├── data/                     #   Events/claims JSONL storage
+│   ├── state/                    #   Checkpoints, qdrant storage, state.sqlite
+│   ├── logs/                     #   Execution traces and exports
+│   └── tests/                    #   Memory bench tests (pytest)
+├── frontend/                     # [submodule] Electron + React UI → see frontend/CLAUDE.md
+├── launcher/                     # [submodule] Vite-based launcher
+├── packages/                     # [submodule] Local workspace members
+│   ├── Qwen3-ASR/                #   Qwen ASR (OpenVINO)
+│   ├── GSV-TTS-Lite/             #   GPT-SoVITS TTS
+│   ├── Genie-TTS/                #   Genie TTS
+│   └── Qwen3-TTS/                #   Qwen TTS (via pyproject workspace)
+├── config/                       # Runtime config
+│   └── lab.toml                  #   Main config (ASR, agent, TTS, plugins)
+├── profiles/                     # Character profiles (TOML)
+├── models/                       # Pre-trained model storage (ASR, TTS, embedding)
+├── tests/                        # Backend tests (pytest)
+├── scripts/                      # Utility scripts (batch TTS, model download, ...)
+├── docs/                         # VitePress documentation site
+└── justfile                      # Dev commands (100+ recipes)
+```
 
-# 报错结构
-原因：一句话
-解决：命令或操作
-验证：怎么确认
+## Architecture
 
----
+```
+Frontend (Electron/React)  ←WebSocket→  Backend (FastAPI)  ←subprocess/API→  Services
+         Live2D + UI                    Agent + Plugins                ASR / TTS / LLM / MCP
+```
 
-# 示例
+- Frontend connects via WebSocket; backend pushes events (`audio`, `control`, `model`, `history`)
+- Agent uses OpenAI-compatible LLM API (single adapter, works with any compatible provider)
+- Plugins hook into agent lifecycle via `HookManager` (pre/post processing, tool injection)
+- ASR/TTS run as in-process FastAPI sub-apps or external subprocesses
+- MCP servers provide tool/vision/time capabilities to the agent
 
-❌ 用户说失败过的方案，还是给同一个
-用户：试过 pip install，装不上，报网络错误
-助手：可以试试 pip install -U ultralytics
-✅ 原因：网络问题
-   解决：pip install ultralytics -i https://pypi.tuna.tsinghua.edu.cn/simple
-   验证：import ultralytics 不报错
+### Backend request flow
 
----
+```
+WebSocket message
+  → websocket_handler.py (route by MessageType: CONVERSATION / GROUP / HISTORY / INTERRUPTS)
+  → conversation_handler.py (trigger, interrupt, task lifecycle)
+  → agent_core.py (plugin hooks → LLM call → tool execution → response)
+  → tts_manager.py (text → audio chunks, streamed back via WebSocket)
+```
 
-❌ 简单问题给了复杂回答
-用户：git 怎么撤销上一次 commit
-助手：Git 提供了多种撤销方式，具体取决于你的需求……
-✅ git reset --soft HEAD~1   # 保留改动
-   git reset --hard HEAD~1   # 彻底删除
+### Adding a new plugin
 
----
+1. Create `src/lab/plugins/your_plugin/` with `__init__.py`
+2. Implement plugin class extending the plugin interface
+3. Define Pydantic config model for `plugin.toml` schema
+4. Run `just sync-plugin` to generate config metadata
+5. Register in profile TOML under `[plugins]`
 
-❌ 二选一问题绕回"各有优劣"
-用户：PyTorch 和 TensorFlow 学哪个
-助手：两者各有优劣，PyTorch 更适合研究，TensorFlow 更适合生产……
-✅ PyTorch。现在学术界和工业界都在往这边走，
-   YOLO 这条线也是 PyTorch。
+## Memory Bench Pipeline
 
----
+Offline pipeline: raw conversations → structured memory → Neo4j knowledge graph.
 
-❌ 报错问题给了原理分析
-用户：docker compose up -d 报错
-助手：这说明你的环境里 compose 插件没有安装，
-      Docker 把整条命令当成普通命令来解析了……
-✅ 原因：旧版 Docker，无 compose 插件
-   解决：apt install docker-compose -y && docker-compose up -d
-   验证：docker-compose version 有输出
+```
+build-index → annotate (LLM #1) → compile-events
+  → mem0 ingest → mem0 export
+  → claimify (LLM #3) → compile-claims
+  → graph nodes/edges → Cypher → Neo4j
+```
 
----
+Quick-start entries at different pipeline stages:
+- `just mem0-run-from-annotate` — full pipeline from scratch
+- `just mem0-run-from-ingest` — skip annotation, reuse events
+- `just mem0-run-from-claim` — skip annotation + ingest, rerun claims
+- `just mem0-run-real-time` — start realtime chat server with memory
 
-❌ 开放问题给了学习框架
-用户：如何学 YOLO
-助手：📚 前置知识 / 你需要先掌握 / 你按这个路径……
-✅ 先跑通这两步：
-   pip install ultralytics
-   yolo predict model=yolov8n.pt source='https://ultralytics.com/images/bus.jpg'
-   跑完告诉我想做什么方向。
+## Dev Commands
 
----
+```bash
+just dev                # Clean build + start server (uv lock → run_server.py)
+just server             # Start server directly
+just mcp-server         # Start MCP servers (timeemi + vision + tool)
 
-❌ 开头定性"这样学最快/最好/最对"
-✅ 直接给步骤，不加价值判断
+just test               # Run all tests (backend + memory_bench)
+just fmt                # Ruff format + import sort
+just lint               # Pyright + Ruff check
 
----
+just sync-dev           # Checkout dev, pull, sync submodules
+just sync-plugin        # Sync plugin config metadata
+just reload-lab-setting # Regenerate config/lab.toml with new defaults
 
-❌ 用一整块告诉用户不要做什么
-用户：如何学 YOLO
-助手：别这样学：一开始就改模型结构 / 一开始就啃论文 / 拿脏数据反复训练……
-✅ 步骤里没有那一步就行，不需要专门列出来
+just docs-dev           # Start VitePress dev server
+```
 
----
+## Commit Convention (Gitmoji)
 
-❌ 评判用户行为
-✅ 陈述步骤，不提用户应该怎么做
+Format: `:gitmoji: type: description`
 
-❌ 结尾加升华句或打气
-❌ 结尾加一句"别先做 X"
-✅ 说完就停
+| gitmoji | type | usage |
+|---------|------|-------|
+| `:sparkles:` | feat | New feature |
+| `:bug:` | fix | Bug fix |
+| `:recycle:` | refactor | Refactor |
+| `:art:` | fix/style | Code format/structure improvement |
+| `:zap:` | perf | Performance |
+| `:arrow_up:` | deps/chore | Dependency bump |
+| `:memo:` | docs | Documentation |
+| `:white_check_mark:` | test | Tests |
+| `:wrench:` | chore | Config files |
+| `:fire:` | chore | Remove code/files |
 
----
+Example: `:sparkles: feat: OCR 累积去重 — 归一化后精确匹配防止抖动文本重复计数`
 
-# 硬性禁止
-- 来源标注
-- 结尾推销下一轮对话
-- 评判用户行为
-- 一次问多个问题
-- emoji / 加粗标题 / 表格
-- "你真正需要的是……"
-- "各有优劣，取决于你的需求"
-- "这样学最快/最好/最对"
-- 用一整块列出用户不应该做的事
-- 用户说失败过的方案再出现一次
+## Key Conventions
 
----
+- **Python 3.11**, `uv` for package management, `pyright` strict, `ruff` lint
+- **Lazy imports**: heavy libraries (`torch`, `pandas`, etc.) must use lazy import (marked `# Lazy-import`) to keep startup fast
+- **Config**: TOML-based — `config/lab.toml` (global), `profiles/*.toml` (per-character)
+- **Language**: UI text in Chinese, code/comments in English
+- **Branching**: `dev` is the main branch; create feature/fix branches from it
+- **Protected files**: never commit `config/lab.toml` or `profiles/baoqiao.toml` — these contain local overrides. Use `stash` to preserve them during branch operations
+- **No force push** unless real conflict + explicit user consent
 
-# Git 规则
-- 本仓库主分支为 `dev`。
-- 无论同步 `dev` 还是推送其他 `feature`/`fix` 分支，严禁提交 `config/lab.toml` 和 `profiles/baoqiao.toml`。
-- 同步分支时，严禁重置（reset）或覆盖这两个文件。必须使用 `stash` 等方式妥善保留其本地修改。
-- 严禁 `force push`，除非存在真实冲突且经用户明确同意后方可执行。
-- 开新分支前，必须先将本地 `dev`（以及 `launcher` 等子模块的对应主分支）同步到与远端一致，再从 `dev` checkout 新分支。不得从已合并的旧 PR 分支直接开新分支，否则会携带大量已合并 commit，难以审查。
+## Communication Style
 
----
+Experienced peer, not a teacher. Organize by conclusion, not explanation.
 
-# 项目结构 (Repository Map)
-- `src/lab/`: 核心 Python 代码（Agent、API、插件、Mcp 等模块）。
-  - `src/lab/agent/`: 智能体核心逻辑和 Transformer。
-  - `src/lab/plugins/`: 插件目录（如 `visual_observer` 等）。
-- `frontend/`: 项目的前端页面与逻辑。
-- `packages/`: 本地 Workspace 成员（如 `packages/Qwen3-ASR` 和 `packages/GSV-TTS-Lite`）。
-- `config/`: 配置文件存放，`lab.toml` 包含本地运行的覆盖项。
-- `profiles/`: 个人 Profile 配置文件目录（如 `baoqiao.toml`）。
-- `tests/`: 基于 pytest 的测试套件。
+Error format: cause (one line) → fix (command) → verify (how to confirm).
 
-# 环境与初始化 (Bootstrap)
-- 本项目要求 **Python 3.11** 且使用 **uv** 进行包和依赖管理。
-- 大量使用了 Lazy-import（以 `# Lazy-import` 标注），在修改或引入大库（如 `torch`, `pandas` 等）时，必须保持 Lazy-import，防止拖慢 UI 响应。
-
----
-
-# 发送前
-能立刻知道下一步做什么？
-有在表演经验或评判用户吗？
-有就删。
+Hard rules:
+- Don't repeat a solution the user already said failed
+- Don't wrap simple answers in long explanations
+- Don't hedge with "it depends" on binary questions — give a recommendation
+- Don't add motivational endings or meta-commentary
+- Say it, then stop
