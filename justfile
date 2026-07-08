@@ -15,9 +15,6 @@ reload-lab-setting:  # 重新生成 config/lab.toml（升级默认值 / 重置�
   uv run get_root
   uv run scripts/reload_lab_setting.py
 
-lab-reload-setting:
-  just reload-lab-setting
-
 sync-plugin:  # 同步插件 Pydantic config model 生成的 plugin.toml [config]/[config_schema]
   uv run python scripts/sync_plugin_config_metadata.py
 
@@ -31,20 +28,6 @@ docs-build:
 
 docs-clean:
   rm -rf docs/.vitepress/cache docs/.vitepress/dist
-
-key:
-  uv run scripts/sync_apikey.py  # 同步 providers / model selection / reasoning
-
-
-list-model: # 列出配置项中填写 api_key 的模型列表
-  uv run get_root
-  uv run scripts/list_model_name.py
-
-start:
-  uv lock
-  uv sync
-  uv run get_root
-  uv run run_server.py
 
 clean-venv:
   # 如果在 windows 上删不干净，可以运行 `FileLocksmithCLI.exe --kill "D:\tmp\XnneHangLab\.venv"`
@@ -84,9 +67,6 @@ test-proxy-health:
 test-asr:
   curl -X POST "http://localhost:12393/asr/sherpa/transcribe" -F "file=@./voices/example1.wav"
 
-test-sherpa-asr:
-  curl -X POST "http://localhost:12393/asr/sherpa/transcribe" -F "file=@./voices/example1.wav"
-
 test-qwen-asr-0-6b:
   curl -X POST "http://localhost:12393/asr/qwen-asr/0.6B/transcribe" -F "file=@./voices/example1.wav"
 
@@ -94,9 +74,6 @@ test-qwen-asr-1-7b:
   curl -X POST "http://localhost:12393/asr/qwen-asr/1.7B/transcribe" -F "file=@./voices/example1.wav"
   
 test-vad:
-  curl -X POST "http://localhost:12393/asr/sherpa/vad" -F "file=@./voices/example3.opus"
-
-test-sherpa-vad:
   curl -X POST "http://localhost:12393/asr/sherpa/vad" -F "file=@./voices/example3.opus"
 
 test-sherpa audio='./voices/example3.opus' model_dir='./models/sherpa-onnx-paraformer-zh-2023-09-14' vad_model='./models/silero_vad.onnx' skip_vad='':
@@ -139,13 +116,7 @@ test-gsv-lite-generate server='http://localhost:12393' output='output/gsv_lite_t
     }' \
     -o "{{ output }}"
 
-# deploy
-
-install-model:
-  uv lock
-  uv sync
-  just install-gsv-lite-data
-  just install-gsv-model-baoqiao
+# Model Install (not covered by Launcher)
 
 install-qwen-asr model_dir='./models':
   uv lock
@@ -153,68 +124,6 @@ install-qwen-asr model_dir='./models':
   uv run modelscope download --model xnnehang/Qwen3-ASR-1.7B-INT8_OpenVINO --local_dir {{ model_dir }}/Qwen3-ASR-1.7B-INT8-OpenVINO
   uv run modelscope download --model xnnehang/Qwen3-ASR-0.6B-INT8-OpenVINO --local_dir {{ model_dir }}/Qwen3-ASR-0.6B-INT8-OpenVINO
   uv run modelscope download --model Qwen/Qwen3-ForcedAligner-0.6B --local_dir {{ model_dir }}/Qwen3-ForcedAligner-0.6B
-
-install-gsv-lite-data model_dir='./models/GSVLiteData':
-  uv lock
-  uv sync
-  uv run modelscope download --model pengzhendong/chinese-hubert-base --local_dir {{ model_dir }}/chinese-hubert-base
-  uv run modelscope download --model dienstag/chinese-roberta-wwm-ext-large --local_dir {{ model_dir }}/chinese-roberta-wwm-ext-large  \
-  pytorch_model.bin added_tokens.json config.json configuration.json README.md special_tokens_map.json tokenizer_config.json tokenizer.json
-  uv run modelscope download --model xnnehang/gsv-v2proplus-g2p-resource --local_dir {{ model_dir }}/g2p
-  uv run modelscope download --model xnnehang/gsv-v2proplus-sv-resource --local_dir {{ model_dir }}/sv
-
-install-bert-model model_dir='./models/GSVLiteData':
-  uv lock
-  uv sync
-  uv run modelscope download --model pengzhendong/chinese-hubert-base --local_dir {{ model_dir }}/chinese-hubert-base
-  uv run modelscope download --model dienstag/chinese-roberta-wwm-ext-large --local_dir {{ model_dir }}/chinese-roberta-wwm-ext-large  \
-  pytorch_model.bin added_tokens.json config.json configuration.json README.md special_tokens_map.json tokenizer_config.json tokenizer.json
-  # 这里不能用 --exclude 同时排除 tf_model.h5 和 flax_model.msgpack，多次 exclude 只会保留最后一个，所以这里指定了所有需要的文件
-
-install-gsv-model-elaina:
-  uv lock
-  uv sync
-  uv run modelscope download --model xnnehang/elaina-gsv-v2 --local_dir ./models/gsv-tts-lite/elaina
-
-install-gsv-model-baoqiao:
-  uv lock
-  uv sync
-  uv run modelscope download --model xnnehang/luming-gsv-v2 --local_dir ./models/gsv-tts-lite/luming-v2-pro-plus
-
-install-genie-tts-resource model='xnnehang/xnnehanglab-geniedata' model_dir='./models/geniedata':
-  uv lock
-  uv sync
-  uv run modelscope download --model {{ model }} --local_dir {{ model_dir }}
-
-install-gsv-g2p-resource model='xnnehang/gsv-v2proplus-g2p-resource' model_dir='./models/GSVLiteData/g2p':
-  uv lock
-  uv sync
-  uv run modelscope download --model {{ model }} --local_dir {{ model_dir }}
-
-install-gsv-sv-resource model='xnnehang/gsv-v2proplus-sv-resource' model_dir='./models/GSVLiteData/sv':
-  uv lock
-  uv sync
-  uv run modelscope download --model {{ model }} --local_dir {{ model_dir }}
-
-install-qwen-tts:
-  uv lock
-  uv sync
-  uv run modelscope download --model Qwen/Qwen3-TTS-12Hz-1.7B-Base --local_dir ./models/Qwen3-TTS-12Hz-1.7B-Base
-  uv run modelscope download --model Qwen/Qwen3-TTS-12Hz-0.6B-Base --local_dir ./models/Qwen3-TTS-12Hz-0.6B-Base
-
-install-local-embedding model_dir='./models':
-  uv lock
-  uv sync
-  uv run modelscope download --model ggml-org/bge-m3-Q8_0-GGUF bge-m3-q8_0.gguf --local_dir {{ model_dir }}
-
-install-sherpa-model:
-  mkdir -p ./models
-  curl -L https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-paraformer-zh-2023-09-14.tar.bz2 -o ./models/sherpa-onnx-paraformer-zh-2023-09-14.tar.bz2
-  tar xf ./models/sherpa-onnx-paraformer-zh-2023-09-14.tar.bz2 -C ./models/
-  curl -L https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx -o ./models/silero_vad.onnx
-
-install-llm-translate:
-  uv run modelscope download --model Qwen/Qwen2.5-0.5B-Instruct-GGUF qwen2.5-0.5b-instruct-q8_0.gguf --local_dir ./models
 
 
 # Code Quality Check

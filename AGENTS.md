@@ -132,12 +132,13 @@ Example: `:sparkles: feat: OCR 累积去重 — 归一化后精确匹配防止�
 ## Key Conventions
 
 - **Python 3.11**, `uv` for package management, `pyright` strict, `ruff` lint
-- **Lazy imports**: heavy libraries (`torch`, `pandas`, etc.) must use lazy import (marked `# Lazy-import`) to keep startup fast
+- **Lazy imports**: heavy libraries (`torch`, `pandas`, etc.) must use lazy import to keep startup fast
 - **Config**: TOML-based — `config/lab.toml` (global), `profiles/*.toml` (per-character)
 - **Language**: UI text in Chinese, code/comments in English
 - **Branching**: `dev` is the main branch; create feature/fix branches from it
-- **Config hygiene**: `config/lab.toml` and `profiles/baoqiao.toml` contain user-local settings (API keys, private preferences). Committing new fields or schema changes is fine; committing keys or personal overrides is not. Use `stash` to preserve local changes during branch operations
-- **No force push** unless real conflict + explicit user consent
+- **Model install**: use Launcher's Models page, not justfile (except `just install-qwen-asr`)
+
+For git workflow rules, config hygiene, PR template format, and other pitfalls → see [gotcha.md](gotcha.md)
 
 ## Communication Style
 
