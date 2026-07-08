@@ -5,8 +5,10 @@
 - 原始章节语料（`memory_bench/data/source/raw/`）
 - 规范化章节语料（`memory_bench/data/source/norm/`，可选）
 - 机器可读索引（`memory_bench/data/source/index.json`）
-- 工作流文档与提示词（`memory_bench/docs/`）
+- 运行时 prompt 资产与生成的 schema 参考（`memory_bench/docs/`）
 - 工作流脚本（`memory_bench/scripts/`）
+
+> 工作流文档（脚本指南、schema 说明、server 设计等）在 VitePress 站点：[docs/memory-bench](../docs/memory-bench/)。
 - 标注产物、回放状态与调试日志（运行后生成在 `memory_bench/data/*`、`memory_bench/logs/*`、`memory_bench/state/*`）
 
 本模块目标是：让从"章节原文"到"可重放事件流"、再到"Mem0 检索日志/记忆快照"、再到"Claim/Entity 图谱旁路产物"，整个链路 **可复现、可审查、可对照**。
@@ -18,14 +20,13 @@
 ```text
 memory_bench/
 ├─ README.md
-├─ docs/
-│  ├─ 00_DOC_MAP.md
-│  ├─ 05_SCRIPTS_GUIDE.md
-│  ├─ 20_ANNOTATOR_PROMPT.md
+├─ docs/                    (运行时资产，非文档站内容)
+│  ├─ 06_NODE_SCHEMA_REFERENCE.md   (export_node_schema.py 生成)
+│  ├─ 08_EDGE_SCHEMA_REFERENCE.md   (export_edge_schema.py 生成)
+│  ├─ 20_ANNOTATOR_PROMPT.md        (annotate_all.py 运行时加载)
 │  ├─ 21_SCENE_CANON.md
-│  ├─ 22_PERSONA_CANON.md
-│  ├─ 23_CLAIM_EXTRACTOR_PROMPT.md
-│  └─ 40_ANCHORS_AND_TEMPLATES.md
+│  ├─ 22_PERSONA_CANON.md           (chat_cli.py 运行时加载)
+│  └─ 23_CLAIM_EXTRACTOR_PROMPT.md  (claimify_all.py 运行时加载)
 ├─ scripts/
 │  ├─ build_index.py
 │  ├─ annotate_all.py
@@ -46,27 +47,14 @@ memory_bench/
 │  └─ rate_limiter.py      (工具模块)
 ├─ server/
 │  ├─ __init__.py
-│  ├─ router.py              (FastAPI router — 可独立挂载，OpenAI 兼容 `/v1/chat/completions`)
-│  ├─ chat_router.py         (轻量级 router — `/memory/chat` 端点，兼容 AIChat 客户端)
-│  ├─ conversation_store.py  (日期为基础的对话 JSONL 持久化存储)
+│  ├─ router.py              (mem0 原生记忆 API — `/memory/search`、`/memory/add`、`/memory/health`)
+│  ├─ proxy_router.py        (OpenAI 兼容代理 — `/memory/v1/chat/completions`、`/memory/v1/models`)
 │  ├─ neo4j_queries.py       (Neo4j Cypher 查询模板)
 │  ├─ startup.py             (初始化帮助函数 — 供外部 host app 调用)
 │  ├─ chat_server.py         (独立启动器 + CLI)
 │  ├─ chat_cli.py            (终端对话调试客户端)
 │  ├─ claim_extractor.py     (实时 claim/entity 提取)
 │  └─ graph_writer.py        (实时图谱写入 Neo4j)
-│  └─ prompts/               (系统 prompt 模板目录)
-│     ├─ emotion/
-│     │  ├─ base_persona.txt      (基础人设)
-│     │  └─ emotion_system.txt    (情绪系统)
-│     ├─ tools/
-│     │  └─ tool_definitions.txt  (工具定义，可选)
-│     └─ diary/
-│        └─ recent_summary.txt    (日记摘要，可选)
-│  └─ conversations/         (对话历史存储目录，运行后生成)
-│     ├─ 2026-03-03.json
-│     ├─ 2026-03-04.json
-│     └─ ...
 ├─ resources/
 │  └─ tag_registry.json
 ├─ data/
@@ -321,80 +309,36 @@ uv sync --group memory_bench
 
 ### 概述
 
-`memory_bench/server/` 提供两个 FastAPI router，用于不同场景的对话服务：
+`memory_bench/server/` 提供两个 FastAPI router，用于不同场景：
 
-1. **`router.py`** — OpenAI 兼容的 `/v1/chat/completions` 代理，集成 mem0 记忆检索
-2. **`chat_router.py`** — 轻量级 `/memory/chat` 端点，兼容 AIChat 客户端，使用 `conversation_store.py` 存储对话历史
+1. **`proxy_router.py`** — OpenAI 兼容的透明代理（`/memory/v1/chat/completions`），转发到上游 LLM 并旁路做记忆检索/写入
+2. **`router.py`** — mem0 原生记忆 API（`/memory/search`、`/memory/add`），供主服务的 `memory` 插件（`src/lab/plugins/memory/`）调用
+
+> 历史说明：早期的 `chat_router.py`（`/memory/chat`）与 `conversation_store.py` 已在 [#274](https://github.com/XnneHangLab/XnneHangLab/issues/274) 迁移到 `src/lab`，对话执行逻辑不再属于 memory_bench。
 
 ### 文件说明
 
 | 文件 | 作用 |
 |------|------|
 | `startup.py` | 初始化帮助函数（`load_memory_bench_env` / `resolve_memory_bench_config` / `init_router_state`），供外部 host app 共用 |
-| `router.py` | OpenAI 兼容 router，端点：`/memory/v1/chat/completions`、`/memory/v1/models`、`/memory/health` |
-| `chat_router.py` | 轻量级 router，端点：`/memory/chat`、`/memory/sessions`、`/memory/health` |
-| `conversation_store.py` | 日期为基础的对话 JSONL 持久化（`conversations/YYYY-MM-DD.json`） |
-| `chat_server.py` | 独立启动器 + CLI，用于快速启动 `chat_router.py` |
-| `chat_cli.py` | 终端对话调试客户端，通过 HTTP 调用 server |
+| `proxy_router.py` | OpenAI 兼容 router，端点：`/memory/v1/chat/completions`、`/memory/v1/models`、`/memory/health` |
+| `router.py` | 记忆 API router，端点：`/memory/search`、`/memory/add`、`/memory/health` |
+| `chat_server.py` | 独立启动器 + CLI，组装 proxy_router + router 并启动 uvicorn |
+| `chat_cli.py` | 终端对话调试客户端，通过 HTTP 调用 server（自动加载 `docs/22_PERSONA_CANON.md`） |
 | `claim_extractor.py` | 实时 claim/entity 提取（LLM-based） |
 | `graph_writer.py` | 实时图谱写入 Neo4j（Cypher MERGE） |
 | `neo4j_queries.py` | Neo4j Cypher 查询模板（与业务逻辑分离） |
-
-### prompts/ 目录结构
-
-系统 prompt 从 `prompts/` 目录动态拼接：
-
-```text
-prompts/
-├─ emotion/
-│  ├─ base_persona.txt      (基础人设，必有)
-│  └─ emotion_system.txt    (情绪系统，必有)
-├─ tools/
-│  └─ tool_definitions.txt  (工具定义，可选)
-└─ diary/
-   └─ recent_summary.txt    (日记摘要，可选)
-```
-
-拼接顺序：
-1. `base_persona.txt`
-2. `emotion_system.txt`
-3. `tool_definitions.txt`（如果存在且非空）
-4. `recent_summary.txt`（如果存在且非空）
-
-### conversations/ 目录结构
-
-对话历史存储在 `conversations/` 目录（运行后自动生成）：
-
-```text
-conversations/
-├─ 2026-03-03.json
-├─ 2026-03-04.json
-└─ 2026-03-05.json
-```
-
-每个文件包含一个消息列表：
-
-```json
-[
-  {"role": "user", "content": "你好", "timestamp": "2026-03-04T10:00:00Z"},
-  {"role": "assistant", "content": "你好呀！", "timestamp": "2026-03-04T10:00:01Z"}
-]
-```
 
 ### 启动方式
 
 **独立启动（推荐测试用）：**
 
 ```bash
-# 通过 justfile
-just memory-chat-server          # 默认端口 8080
-just memory-chat-server 9090     # 自定义端口
+# 通过 justfile（user_id / agent_id / agent_name / port）
+just memory-chat-server xnne congyin 聪音 8080
 
 # 直接调用
 uv run memory_bench/server/chat_server.py --port 8080
-
-# 启用实时图谱写入
-just memory-chat-server --enable-graph
 ```
 
 **挂载到 lab server：**
@@ -406,9 +350,9 @@ just memory-chat-server --enable-graph
 memory_bench = true
 ```
 
-lab server 启动时会自动挂载 router：
-- `router.py` → `/memory/v1/chat/completions`
-- `chat_router.py` → `/memory/chat`
+lab server 启动时会自动初始化 mem0 并挂载 router：
+- `proxy_router.py` → `/memory/v1/chat/completions`、`/memory/v1/models`
+- `router.py` → `/memory/search`、`/memory/add`、`/memory/health`
 
 ### 环境变量
 
@@ -432,10 +376,9 @@ NEO4J_PASSWORD=neo4jneo4j
 
 ### 使用场景对比
 
-| 场景 | 推荐 router | 理由 |
+| 场景 | 推荐入口 | 理由 |
 |------|------------|------|
-| AIChat 客户端集成 | `chat_router.py` | 协议兼容，配置简单 |
-| 需要记忆检索 | `router.py` | 集成 mem0 向量检索 |
-| 快速测试/调试 | `chat_router.py` | 无需 mem0/Qdrant |
-| 生产环境（完整功能） | `router.py` | 支持记忆、图谱、工具调用 |
+| OpenAI 兼容客户端直连（AIChat 等） | `proxy_router.py` | 协议兼容，记忆检索/写入对客户端透明 |
+| 主服务 memory 插件检索/写入 | `router.py` | `/memory/search` + `/memory/add` 原生 API |
+| 快速测试/调试 | `chat_cli.py` | 终端 HTTP REPL，自动加载 persona |
 

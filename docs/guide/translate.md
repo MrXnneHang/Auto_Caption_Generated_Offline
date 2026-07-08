@@ -31,11 +31,7 @@ n_gpu_layers = 0   # 0 = 纯 CPU，-1 = 全 GPU（需 CUDA）
 
 ### 2. 下载模型
 
-```bash
-just download-llm-translate
-```
-
-模型：`Qwen/Qwen2.5-0.5B-Instruct-GGUF` Q8_0 量化，约 676 MB，下载到 `./models/`。
+通过 **Launcher 的 Models 页面** 下载翻译模型；或手动下载 `Qwen/Qwen2.5-0.5B-Instruct-GGUF` Q8_0 量化（约 676 MB）放到 `./models/`。
 
 ### 3. 启动服务
 
@@ -46,7 +42,10 @@ just server
 ### 4. 测试
 
 ```bash
-just test-llm-translate
+curl http://localhost:12393/translate/llm/health
+curl -X POST http://localhost:12393/translate/llm \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Hello, world", "target_language": "ZH"}'
 ```
 
 ---

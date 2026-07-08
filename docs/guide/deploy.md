@@ -6,7 +6,7 @@ outline: deep
 
 ## 🏠 本地部署
 
-这份指南会带你在本地跑起来 **后端服务**（ASR / TTS / 翻译 / Chat）以及 **三种前端**（Streamlit / Open-LLM-VTuber / 游戏 Mod TTS 服务）。
+这份指南会带你在本地跑起来 **后端服务**（ASR / TTS / 翻译 / Chat）以及 **Electron 前端**（Live2D 对话界面）。
 
 > 💡 约定：以下命令默认在项目根目录执行；Windows 示例使用 PowerShell。
 
@@ -16,7 +16,7 @@ outline: deep
 
 如果你已经安装好下面三个，可以直接跳到 **🚚 1. 克隆仓库**：
 
-- **ffmpeg**（`yutto` 依赖）— 必装
+- **ffmpeg**（ASR 音频解码依赖）— 必装
 - **uv**（Python 环境与依赖管理）— 必装
 - **just**（命令封装工具）— 可选，装不上也没关系
 
@@ -39,7 +39,7 @@ Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
 
 #### 🎬 0.2 安装 ffmpeg
 
-`yutto` 依赖系统 `ffmpeg`，所以 `ffmpeg` 必须能在终端里直接访问（`ffmpeg -version` 可用）。
+ASR（Sherpa-ONNX）的音频解码依赖系统 `ffmpeg`，所以 `ffmpeg` 必须能在终端里直接访问（`ffmpeg -version` 可用）。
 
 ```bash
 # Linux
@@ -112,17 +112,19 @@ git submodule update --init --recursive voices static packages/* frontend
 
 ---
 
-### 📥 2. 自动安装依赖 + 下载模型权重
+### 📥 2. 安装依赖 + 下载模型权重
 
-如果你安装了 `just`：
+**依赖**：`uv` 会在首次 `uv run` / `just server` 时自动创建环境并安装依赖，无需手动操作。
+
+**模型权重**：统一通过 **Launcher 的 Models 页面** 下载管理（`launcher/` 子模块，Tauri 桌面应用）。唯一的例外是 Qwen ASR：
 
 ```bash
-just install-model
+just install-qwen-asr
 ```
 
-> 🐢 过程可能较久：会创建 Python 环境、安装依赖，并下载模型权重（体积都不小）。
+> 🐢 模型体积都不小，下载过程可能较久。
 
-你可以通过重复运行命令来验证模型是否下载完整；或检查 `models/` 目录：
+下载完成后可检查 `models/` 目录：
 
 ```powershell
 ls .\models\
@@ -153,21 +155,9 @@ just server
 
 ---
 
-### 🎛️ 5. 启动前端（3 选 1 或同时使用）
+### 🎛️ 5. 启动前端
 
-目前有三种前端，你可以按需求选择：
-
-#### 🌈 5.1 Streamlit WebUI（下载 B 站视频 / 字幕提取等）
-
-```bash
-just start
-```
-
----
-
-#### 🧍 5.2 Open-LLM-VTuber（Live2D + LLM，对话 VTuber）
-
-默认使用 elaina 模型。
+#### 🧍 5.1 Electron 前端（Live2D + LLM，对话 VTuber）
 
 ```bash
 cd frontend
@@ -177,7 +167,7 @@ npm run dev
 
 ---
 
-#### 🎮 5.3 Chill with You Lo-Fi Story（游戏 Mod 的 TTS 服务端）
+#### 🎮 5.2 Chill with You Lo-Fi Story（游戏 Mod 的 TTS 服务端）
 
 旧版 GPT-SoVITS 兼容接口已移除，当前版本不再直接提供 `/tts/gptsovits*` / `/tts/gptsovitsv2*` 这类 Mod 兼容端点。
 

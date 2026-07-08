@@ -45,10 +45,10 @@ conversations/
 
 `tts_manager.py` 管理 TTS 任务队列和音频推送：
 
-- 支持多种 TTS 后端（GPT-SoVITS / Qwen-TTS）
-- 流式音频推送（SSE）
+- 支持多种 TTS 后端（Genie-TTS / GSV-TTS-Lite / Qwen-TTS）
+- 流式音频推送
 - 音频缓存与清理
-- 翻译集成（DeepLX）
+- 翻译集成（DeepLX / LLM）
 
 ## 数据流
 

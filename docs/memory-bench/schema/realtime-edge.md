@@ -222,7 +222,7 @@ ORDER BY edge_type;
 ### 3. 对比两者
 
 ```bash
-diff /tmp/offline_edges.md /wangwang/workspace/XnneHangLab/memory_bench/docs/09_REALTIME_EDGE_SCHEMA_REFERENCE.md
+diff /tmp/offline_edges.md docs/memory-bench/schema/realtime-edge.md
 ```
 
 **预期差异**：
