@@ -1,43 +1,42 @@
 # RoadMap
 
-XnneHangLab 项目的开发路线图与技术债务清理计划。
+XnneHangLab 项目的开发路线图与技术债务清理计划。（更新于 2026-07-08）
 
-## 工具系统重构：Plugin 化 + Skill 分层
+## 记忆系统：LLM Mode
 
-**状态：** 设计完成，Phase 1 待执行
+**状态：** 设计完成（[ADR-0001](/adr/0001-llm-mode-memory)），实施中
 **优先级：** 高
-**设计文档：** [#262](https://github.com/XnneHangLab/XnneHangLab/issues/262) | **讨论记录：** [#260](https://github.com/XnneHangLab/XnneHangLab/issues/260)
+**设计文档：** [ADR-0001](/adr/0001-llm-mode-memory) | [ADR-0002](/adr/0002-memu-design-not-dependency) | [#471](https://github.com/XnneHangLab/XnneHangLab/issues/471) / [#468](https://github.com/XnneHangLab/XnneHangLab/issues/468)
 
-当前 MCP 工具系统存在结构性问题：内置工具走 MCP HTTP 开销过大、ToolRegistry 手写路由表、tool loop 和具体工具硬耦合。计划重构为 Tool / Skill / Plugin 三层共存架构。
+用 categories + wiki-links + metadata 的扁平存储取代 Neo4j 语义节点（Domain / Topic / Scene / Predicate），结构节点（Agent / Character / User / Conversation）保留用于可视化。设计借鉴 memU（不引入其依赖，见 ADR-0002）。
 
-**Phase 路线：**
+**里程碑：**
 
-| Phase | 内容 | Issue | 状态 |
-|---|---|---|---|
-| Phase 1 | 内置工具脱离 MCP，直接 function calling | [#261](https://github.com/XnneHangLab/XnneHangLab/issues/261) | 待执行 |
-| Phase 2 | Plugin 注册机制 + ToolManager | 待开 | 规划中 |
-| Phase 3 | Skill 文件系统 + SkillLoader | 待开 | 规划中 |
-| Phase 4 | Hook 机制 + SystemPromptBuilder + Profile 配置 | 待开 | 规划中 |
-| Phase 5 | memory_bench chat_router 迁移到 src/lab | 待开 | 规划中 |
-| Phase 6 | 文档同步 | 待开 | 规划中 |
+| 里程碑 | 内容 | 状态 |
+|---|---|---|
+| M1 | 存储层 — categories + metadata + 扁平条目 | 待开工 |
+| M2 | 检索 — wiki-link `[[category:item]]` 解析与关联抓取 | 待开工 |
+| M3 | MemoryPlugin 双模开关 — LLM Mode / RAG Mode 独立启停 | 待开工 |
+| M4 | Neo4j 语义节点退役 — 实时管线停产语义节点 | 待开工 |
 
-## Memory Bench 定位调整
+**后续方向：**
 
-**状态：** 设计完成
-**优先级：** 高
-**关联：** [#262](https://github.com/XnneHangLab/XnneHangLab/issues/262) | [#224](https://github.com/XnneHangLab/XnneHangLab/issues/224)
+- Multi-Character 记忆（[#470](https://github.com/XnneHangLab/XnneHangLab/issues/470) / [#469](https://github.com/XnneHangLab/XnneHangLab/issues/469)）— Agent 画像独立为 LLM Mode + User 模板继承
+- RAG Mode 独立演进 — embedding + graph traversal（远期，与 LLM Mode 并行的另一条线）
 
-memory_bench 定位为"纯记忆后端（脑子）"，只负责：
-1. 记忆检索 → 注入 → 转发给 LLM
-2. 从 LLM 返回中提取知识 → 写入 mem0 + Neo4j
-3. 保存对话记录
+## TTS 统一调度
 
-不包含 tool call 执行、skill 加载等"行动"逻辑。当前 `chat_router.py` 的 tool loop 将在 Phase 5 迁移到 src/lab 的 Plugin 层。
+**状态：** 规划中
+**优先级：** 中
+**关联：** [#402](https://github.com/XnneHangLab/XnneHangLab/issues/402)
 
-**待完成：**
-- [ ] 职责分离重构（透明代理 vs 自治 agent）— [#224](https://github.com/XnneHangLab/XnneHangLab/issues/224)
-- [ ] EMOTION 结构化响应
-- [ ] 上下文裁剪策略
+统一 TTS 引擎（Genie-TTS / GSV-TTS-Lite / Qwen-TTS）的调度层，集中管理语音资源与情绪配置。
+
+## 插件与感知
+
+- **AudioTriggerPlugin**（[#368](https://github.com/XnneHangLab/XnneHangLab/issues/368)）— 预制音频库 + 大模型触发 + Live2D 联动
+- **异步 Screen Observation / Vision Input 插件架构**（[#380](https://github.com/XnneHangLab/XnneHangLab/issues/380)）— 初版已由 `visual_observer` 插件落地（OCR 轮询 + 场景切换检测 + vision boost），作为 agent core 额外输入的通用架构化仍在设计
+- **统一 vision pipeline**（[#353](https://github.com/XnneHangLab/XnneHangLab/issues/353)）— 将更多 tool callback image 接入统一视觉管线
 
 ## 功能开发
 
@@ -46,15 +45,17 @@ memory_bench 定位为"纯记忆后端（脑子）"，只负责：
 **状态：** 规划中
 **优先级：** 中
 
-当前翻译依赖外部 DeepLX 服务，计划接入独立的翻译大模型。
+当前翻译依赖外部 DeepLX 服务与本地 GGUF 小模型（`/translate/llm`），计划评估更强的独立翻译模型。
 
 **候选模型：**
+
 - [Tencent-Hunyuan/HY-MT1.5-1.8B](https://modelscope.cn/models/Tencent-Hunyuan/HY-MT1.5-1.8B) — 腾讯混元翻译模型
 
 **待完成：**
+
 - [ ] 模型集成与推理封装
 - [ ] 路由层适配（保持 API 兼容）
-- [ ] 性能对比测试（vs DeepLX）
+- [ ] 性能对比测试（vs DeepLX / Qwen2.5-0.5B）
 
 ## 技术债务
 
@@ -66,9 +67,17 @@ memory_bench 定位为"纯记忆后端（脑子）"，只负责：
 `cli.py` 当前只用于 ASR 命令行工具，是否保留需要评估。
 
 **选项：**
+
 1. 保留并扩展为完整的 CLI 工具集
 2. 移除，ASR 功能通过 API 调用
 3. 拆分到独立的 `lab-cli` 包
+
+## 已完成（存档）
+
+| 事项 | 说明 |
+|---|---|
+| 工具系统重构：Tool / Skill / Plugin 三层架构 | [#262](https://github.com/XnneHangLab/XnneHangLab/issues/262) 设计已分阶段落地：内置 function calling、Plugin 注册 + ToolManager、Skill 文件系统、Hook 机制 + SystemPromptBuilder |
+| memory_bench 定位调整 | chat_router 已迁移至 `src/lab`（[#274](https://github.com/XnneHangLab/XnneHangLab/issues/274)），memory_bench 收敛为纯记忆后端（`/memory/search`、`/memory/add` + OpenAI 兼容代理） |
 
 ---
 
