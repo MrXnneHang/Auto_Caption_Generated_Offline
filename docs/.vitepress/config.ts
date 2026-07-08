@@ -16,6 +16,7 @@ export default defineConfig({
       { text: "首页", link: "/" },
       { text: "指南", link: "/guide/intro" },
       { text: "Memory Bench", link: "/memory-bench/" },
+      { text: "ADR", link: "/adr/" },
       {
         text: "GitHub",
         link: "https://github.com/XnneHangLab/XnneHangLab",
@@ -23,6 +24,17 @@ export default defineConfig({
     ],
 
     sidebar: {
+      "/adr/": [
+        {
+          text: "架构决策记录",
+          items: [
+            { text: "ADR 索引", link: "/adr/" },
+            { text: "0001 LLM Mode 记忆系统", link: "/adr/0001-llm-mode-memory" },
+            { text: "0002 memU：借鉴设计而非引入依赖", link: "/adr/0002-memu-design-not-dependency" },
+          ],
+        },
+      ],
+
       "/guide/": [
         {
           text: "开始",
@@ -69,7 +81,6 @@ export default defineConfig({
           items: [
             { text: "文档地图", link: "/memory-bench/" },
             { text: "脚本指南", link: "/memory-bench/scripts-guide" },
-            { text: "Neo4j 导入", link: "/memory-bench/neo4j-import" },
           ],
         },
         {
@@ -140,10 +151,6 @@ export default defineConfig({
             },
             { text: "chat_cli", link: "/memory-bench/scripts/chat-cli" },
             {
-              text: "chat_router",
-              link: "/memory-bench/scripts/chat-router",
-            },
-            {
               text: "chat_server",
               link: "/memory-bench/scripts/chat-server",
             },
@@ -168,10 +175,6 @@ export default defineConfig({
               link: "/memory-bench/scripts/compiled-claims",
             },
             {
-              text: "conversation_store",
-              link: "/memory-bench/scripts/conversation-store",
-            },
-            {
               text: "export_edge_schema",
               link: "/memory-bench/scripts/export-edge-schema",
             },
@@ -179,7 +182,6 @@ export default defineConfig({
               text: "export_node_schema",
               link: "/memory-bench/scripts/export-node-schema",
             },
-            { text: "file_tools", link: "/memory-bench/scripts/file-tools" },
             {
               text: "graph_to_cypher",
               link: "/memory-bench/scripts/graph-to-cypher",
@@ -215,10 +217,6 @@ export default defineConfig({
             {
               text: "replay_mem0",
               link: "/memory-bench/scripts/replay-mem0",
-            },
-            {
-              text: "search_tools",
-              link: "/memory-bench/scripts/search-tools",
             },
             { text: "startup", link: "/memory-bench/scripts/startup" },
             {
