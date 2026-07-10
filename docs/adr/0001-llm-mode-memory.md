@@ -1,7 +1,7 @@
 # ADR-0001: LLM Mode 记忆系统 — categories + wiki-links 取代 Neo4j 语义节点
 
 - **状态**：Accepted
-- **日期**：2026-07-08，修订 2026-07-10（PR #477 评审：检索去 LLM 化、零基础设施约束；二次修订：撤销双模开关，收敛为单管线 + embedding 渐进增强）
+- **日期**：2026-07-08，修订 2026-07-10（PR #477 评审：检索去 LLM 化、零基础设施约束；二次修订：撤销双模开关，收敛为单管线 + embedding 渐进增强；三次修订：磁盘无不可读真相——索引不落盘，SQLite 移出设计，补可观测性）
 - **关联**：[#471](https://github.com/XnneHangLab/XnneHangLab/issues/471) / [#468](https://github.com/XnneHangLab/XnneHangLab/issues/468)（设计来源）、[#470](https://github.com/XnneHangLab/XnneHangLab/issues/470) / [#469](https://github.com/XnneHangLab/XnneHangLab/issues/469)（后续：Multi-Character 记忆）、[ADR-0002](./0002-memu-design-not-dependency)
 
 ## 背景
@@ -20,6 +20,7 @@ memory_bench 的 Neo4j 图目前有 10 种节点类型，但只支撑可视化�
 
 1. **零基础设施**：没有 embedding 模型、向量库、图数据库时系统必须可用——纯文本检索（BM25）兜底，embedding 只是可选增强。
 2. **不为记忆等待 LLM**：retrieve 路径 **0 次** LLM 调用；memorize **至多 1 次** LLM 调用且异步后台执行，永不阻塞对话。检索失败/超时 fail-open（注入空内容，对话照常）。
+3. **磁盘上不允许有不可读的真相**（三次修订补充）：category markdown 文件是唯一事实源；一切索引/向量都是派生缓存，删除后必须能从文件完整重建。用户和程序员看文件（和操作日志）就能知道记忆发生了什么——不需要打开任何数据库工具，更不需要 docker。
 
 ### 数据模型（resource / category / item 三层）
 
@@ -47,13 +48,31 @@ memory_bench 的 Neo4j 图目前有 10 种节点类型，但只支撑可视化�
 | 场景 | 排序信号 | 相对纯 BM25 的额外成本 |
 |---|---|---|
 | 无 embedding 模型（默认 / 兜底） | BM25 关键词（中文需分词） | 无 |
-| 配置了 embedding 端点 | BM25 分 + 余弦分各自 min-max 归一后融合 | 写入时每批条目 1 次 embedding 调用、查询时 1 次；向量存 SQLite/JSON，暴力余弦，无新增服务 |
+| 配置了 embedding 端点 | BM25 分 + 余弦分各自 min-max 归一后融合 | 写入时每批条目 1 次 embedding 调用、查询时 1 次；向量存单个 JSON 缓存文件（item 内容哈希为键，删除即自动重建），暴力余弦，无新增服务 |
 
 查询 → 检索 L2 条目 → 命中条目机械展开 wiki-links（一跳）→ 按 token 预算裁剪注入。
 
 **embedding 换来什么**：中文同义/改写的语义召回（"想去海边" vs "喜欢海"）——BM25 分词后仍是词面匹配。个人记忆库规模小（数千条目量级），BM25 + 良好的 item 命名可能已经够用；是否默认启用 embedding 融合，由 memory_bench probe 语料的命中率对比决定（M2 先纯 BM25 上线，融合作为 M3 可测量的可选项）。收益大于复杂度**只在"融合项"形态下成立**——一旦做成第二条管线就不成立。
 
-### 与 Neo4j 的关系
+### 存储形态与可观测性（2026-07-10 三次修订，见 PR #477 评论）
+
+评审追问：SQLite 同样是黑盒——用户/程序员无法直接看到库里发生了什么。回应：把"数据库"从设计里拿掉，而不是给数据库配可视化工具。
+
+**磁盘上只有三种东西，全部可读或可删**：
+
+| 磁盘产物 | 角色 | 性质 |
+|---|---|---|
+| `memory/<category>.md` | **唯一事实源** | 人可读、可编辑、可 diff；用户想改记忆就改文件 |
+| `journal.jsonl` | 操作日志（append-only） | 每次 memorize/合并/修复一行：时间戳、source_conv、category、item-name、动作。`tail -f` 即实时视图，"记忆发生了什么"的完整答案 |
+| `vectors.json`（仅启用 `[embed]` 时存在） | 派生缓存 | 内容哈希为键；删除即重建，永不包含独有信息 |
+
+**索引不落盘**：BM25 索引在启动时扫描 markdown 在内存构建。数千条目量级（个人记忆库）就是几 MB 文本，重建成本可忽略；若未来到十万条量级，才允许引入磁盘缓存作为优化——仍必须满足硬约束 3（可删、可重建、非真相）。SQLite 从设计中移除。
+
+**看见检索**：`retrieve(..., explain=True)` 返回打分明细（BM25 分 / 余弦分 / 融合分、wiki-link 展开了哪些条目、token 预算裁掉了什么），适配层可直接落日志。
+
+**零依赖 CLI**（stdlib，随包提供）：`ls` / `show <category>` / `grep` / `explain "<query>"` / `graph --format mermaid|json`——最后一条从 markdown 解析 `[[...]]` 导出 wiki-link 关系图，接替 Neo4j 语义层的可视化职责（配合 #481 退役），宿主前端拿 JSON 自行渲染。全程无 docker、无服务进程。
+
+**历史追溯**：事实源是纯文本文件，`git init` 记忆目录即免费获得全部历史与 diff——包本身不感知 git，不强加。
 
 - 结构节点（Agent / Character / User / Conversation）**保留**，继续用于可视化
 - 语义节点由 categories 接管，实时管线停止生成语义节点
@@ -80,6 +99,7 @@ memory_bench 的 Neo4j 图目前有 10 种节点类型，但只支撑可视化�
 
 - 无 embedding 时 BM25 对中文需要分词支持（jieba 或字符 n-gram），召回质量需要基准验证
 - wiki-links 的一致性需要写入侧保证（链接目标不存在时需容忍或修复）
+- 索引不落盘意味着每次启动全量扫描重建——数千条目量级可忽略，十万条目量级需按硬约束 3 重新评估磁盘缓存
 - 现有 claim/graph 离线管线继续保留用于 benchmark，但实时链路与它分叉，需维护两套心智模型直到语义节点退役完成
 
 **实施**
