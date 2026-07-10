@@ -100,6 +100,11 @@ ocr = [
   "rapidocr-onnxruntime>=1.4.0",
 ]
 
+# 记忆管线（wikimem 插件后端）：zh = jieba 分词，embed = 可选语义融合
+wikimem = [
+  "wikimem[zh,embed]",
+]
+
 genie-tts = [
   "onnx",
   "onnxruntime==1.22.1", # 升级 1.23 往后有 40% 点速度性能损耗。
@@ -149,7 +154,7 @@ qwen-tts = [
 ]
 
 [tool.uv]
-default-groups = ["base", "ocr", "qwen-asr", "dev", "llama-cpp", "tts_base", "gsv-lite", "genie-tts", "qwen-tts", "vtuber", "memory_bench", "sherpa-onnx"]
+default-groups = ["base", "ocr", "qwen-asr", "dev", "llama-cpp", "tts_base", "gsv-lite", "genie-tts", "qwen-tts", "vtuber", "memory_bench", "sherpa-onnx", "wikimem"]
 
 [tool.uv.workspace]
 members = ["packages/Qwen3-ASR", "packages/GSV-TTS-Lite", "packages/wikimem"]
@@ -185,13 +190,14 @@ llama-cpp-python = [
 ]
 qwen-asr = {  workspace = true }
 gsv-tts-lite = { workspace = true }
+wikimem = { workspace = true }
 
 [tool.pyright]
 include = ["src/lab","tests"]
 pythonVersion = "3.11"
 venvPath = "."
 venv = ".venv"
-extraPaths = ["src", "memory_bench"]
+extraPaths = ["src", "memory_bench", "packages/wikimem/src"]
 typeCheckingMode = "strict"
 reportMissingTypeStubs = false
 
