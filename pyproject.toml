@@ -132,21 +132,6 @@ vtuber = [
   "soundfile>=0.13.1",
 ]
 
-memory_bench = [
-  # Pin Mem0 because replay_mem0 monkey-patches internal vector_store.update behavior
-  # for the NONE-event/vector=None bug path. Version drift may break this workaround.
-  "mem0ai==1.0.3",
-  # Memory Chat Server dependencies (keep versions aligned with top-level [project.dependencies])
-  "fastapi[standard]>=0.115.8",
-  "uvicorn[standard]>=0.35.0",
-  "openai>=1.93.0",
-  "python-dotenv>=1.1.1",
-  "pydantic>=2.10.6",
-  # for original neo4j graph
-  "langchain-neo4j>=0.3.0",
-  "rank-bm25>=0.2.2",
-]
-
 qwen-tts = [
   "faster-qwen3-tts>=0.2.5",
   "soxr>=1.0.0",
@@ -154,7 +139,7 @@ qwen-tts = [
 ]
 
 [tool.uv]
-default-groups = ["base", "ocr", "qwen-asr", "dev", "llama-cpp", "tts_base", "gsv-lite", "genie-tts", "qwen-tts", "vtuber", "memory_bench", "sherpa-onnx", "wikimem"]
+default-groups = ["base", "ocr", "qwen-asr", "dev", "llama-cpp", "tts_base", "gsv-lite", "genie-tts", "qwen-tts", "vtuber", "sherpa-onnx", "wikimem"]
 
 [tool.uv.workspace]
 members = ["packages/Qwen3-ASR", "packages/GSV-TTS-Lite", "packages/wikimem"]
@@ -197,7 +182,7 @@ include = ["src/lab","tests"]
 pythonVersion = "3.11"
 venvPath = "."
 venv = ".venv"
-extraPaths = ["src", "memory_bench", "packages/wikimem/src"]
+extraPaths = ["src", "packages/wikimem/src"]
 typeCheckingMode = "strict"
 reportMissingTypeStubs = false
 
@@ -260,7 +245,7 @@ runtime-evaluated-base-classes = ["pydantic.BaseModel"]
 
 [tool.hatch.build.targets.wheel]
 
-packages = ["src/lab","memory_bench"]
+packages = ["src/lab"]
 
 [build-system]
 requires = ["hatchling"]

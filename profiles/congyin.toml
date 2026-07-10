@@ -6,7 +6,7 @@ persona = "prompts/characters/satone.md"
 format = "prompts/formats/emotion_pipe.md"
 
 [plugins]
-enabled = ["pre_tool_preview", "tool_call_integrity", "web_fetch", "diary", "memory"]
+enabled = ["pre_tool_preview", "tool_call_integrity", "web_fetch", "diary", "wikimem"]
 
 [plugins.pre_tool_preview]
 preview_max_chars = 24
@@ -16,8 +16,7 @@ injection_position = "before_tools"
 [plugins.web_fetch]
 timeout_s = 15.0
 
-[plugins.memory]
+[plugins.wikimem]
 user_id = "xnne"
-agent_id = "congyin"
 search_limit = 3
-# base_url 默认 http://localhost:12393，不填即可
+# 其余字段走默认：memory_dir = "memory"，抽取 LLM 继承 chat 模型配置

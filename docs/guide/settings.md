@@ -82,8 +82,7 @@ lab.toml
 ├── [local_embedding]
 ├── [package]
 ├── [root]
-├── [server]
-└── [memory_bench]
+└── [server]
 ```
 
 ---
@@ -131,7 +130,6 @@ root_dir = "D:\\tmp\\XnneHangLab"
 | genie_tts | true | 是否包含 Genie-TTS 能力 |
 | qwen_tts | false | 是否包含 Qwen-TTS 能力 |
 | llm_translate | false | 是否启用本地 LLM 翻译引擎 |
-| memory_bench | false | 是否包含 memory_bench 服务相关能力 |
 | local_embedding | false | 是否启用本地 GGUF Embedding 服务 |
 
 ---
@@ -354,10 +352,6 @@ host = "localhost"
 port = 12393
 config_alts_dir = "characters"
 uvicorn_log_level = "warning"
-
-[memory_bench]
-search_limit = 10
-server_api_key = ""
 ```
 
 ---

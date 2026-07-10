@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field
 class Packages(TypedDict):
     llm_translate: bool
     local_embedding: bool
-    memory_bench: bool
 
 
 class PackagesSettings(BaseModel):
@@ -19,10 +18,6 @@ class PackagesSettings(BaseModel):
     local_embedding: Annotated[
         bool,
         Field(False, title="Whether to enable local GGUF embedding service"),
-    ]
-    memory_bench: Annotated[
-        bool,
-        Field(False, title="Whether to mount memory_bench service (route prefix: /memory)"),
     ]
     sherpa_asr: Annotated[
         bool,
@@ -49,7 +44,6 @@ class PackagesSettings(BaseModel):
         return {
             "llm_translate": self.llm_translate,
             "local_embedding": self.local_embedding,
-            "memory_bench": self.memory_bench,
         }
 
 

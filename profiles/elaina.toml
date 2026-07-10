@@ -36,10 +36,10 @@ enabled = [
     "web_fetch",
     "screen_shot",
     "diary",
-    "memory",
+    "wikimem",
 ]
 
-[plugins.memory]
+[plugins.wikimem]
 user_id = "xnne"
-agent_id = "elaina"
 search_limit = 3
+# 其余字段走默认：memory_dir = "memory"，抽取 LLM 继承 chat 模型配置
