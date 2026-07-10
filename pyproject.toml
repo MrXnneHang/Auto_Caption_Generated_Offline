@@ -152,7 +152,7 @@ qwen-tts = [
 default-groups = ["base", "ocr", "qwen-asr", "dev", "llama-cpp", "tts_base", "gsv-lite", "genie-tts", "qwen-tts", "vtuber", "memory_bench", "sherpa-onnx"]
 
 [tool.uv.workspace]
-members = ["packages/Qwen3-ASR", "packages/GSV-TTS-Lite"]
+members = ["packages/Qwen3-ASR", "packages/GSV-TTS-Lite", "packages/wikimem"]
 
 [[tool.uv.index]]
 name = "pytorch-cu118"

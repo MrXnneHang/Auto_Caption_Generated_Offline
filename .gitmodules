@@ -20,3 +20,6 @@
 [submodule "launcher"]
 	path = launcher
 	url = https://github.com/XnneHangLab/XnneHangLabLauncher.git
+[submodule "packages/wikimem"]
+	path = packages/wikimem
+	url = https://github.com/XnneHangLab/wikimem.git
