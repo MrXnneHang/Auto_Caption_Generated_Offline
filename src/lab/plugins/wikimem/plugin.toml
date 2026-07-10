@@ -1,0 +1,67 @@
+[plugin]
+id = "wikimem"
+name = "Wikimem Memory"
+version = "0.1.0"
+type = "hook"
+description = "记忆管线（wikimem）：BM25 + 可选 embedding 融合召回注入，单次 LLM 后台抽取写入 markdown 记忆"
+author = "XnneHangLab"
+source = "builtin"
+
+[config]
+memory_dir = "memory"
+user_id = "xnne"
+search_limit = 10
+budget_tokens = 800
+extraction_base_url = ""
+extraction_model = ""
+extraction_api_key = ""
+embedding_base_url = ""
+embedding_model = ""
+embedding_api_key = ""
+
+[config_schema.memory_dir]
+type = "str"
+description = "记忆目录（相对 workspace_root，或绝对路径）"
+
+[config_schema.user_id]
+type = "str"
+description = "记忆条目 owner 标识"
+
+[config_schema.search_limit]
+type = "int"
+description = "每轮召回的最大命中条数"
+min = 1
+max = 100
+
+[config_schema.budget_tokens]
+type = "int"
+description = "每轮注入记忆的 token 预算"
+min = 100
+max = 8000
+
+[config_schema.extraction_base_url]
+type = "str"
+description = "抽取 LLM base_url；留空 = 继承 chat 模型配置"
+
+[config_schema.extraction_model]
+type = "str"
+description = "抽取 LLM 模型名；留空 = 继承 chat 模型配置"
+
+[config_schema.extraction_api_key]
+type = "str"
+description = "抽取 LLM API key；留空 = 继承 chat 模型配置"
+
+[config_schema.embedding_base_url]
+type = "str"
+description = "embedding 端点 base_url；留空 = 纯 BM25"
+
+[config_schema.embedding_model]
+type = "str"
+description = "embedding 模型名；留空 = 纯 BM25"
+
+[config_schema.embedding_api_key]
+type = "str"
+description = "embedding API key（可选）"
+
+[type_config]
+entry = "WikimemPlugin"
