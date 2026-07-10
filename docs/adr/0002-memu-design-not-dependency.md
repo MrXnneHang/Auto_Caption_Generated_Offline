@@ -1,7 +1,7 @@
 # ADR-0002: memU — 借鉴设计而非引入依赖
 
-- **状态**：Proposed
-- **日期**：2026-07-08
+- **状态**：Accepted（2026-07-10 按 PR #477 评审意见修订后采纳）
+- **日期**：2026-07-08，修订 2026-07-10
 - **关联**：[ADR-0001](./0001-llm-mode-memory)、[#471](https://github.com/XnneHangLab/XnneHangLab/issues/471)
 
 ## 背景
@@ -14,14 +14,16 @@
 4. **Beta 级 API 剧变**：`MemoryItem/MemoryCategory` → `RecallEntry/RecallFile` 重命名，0.2 → 1.0 只用了 3 个月；`memorize` 只接受文件式 `resource_url`（对话需先落盘）；`dedupe_merge` 是文档标明的占位 no-op。
 5. **依赖与部署负担**：依赖树含 langchain-core / sqlmodel / alembic / anthropic / numpy≥2.3；`memU-server`（独立仓库）是 AGPL-3.0 + Postgres + pgvector + Temporal，桌面应用不可捆绑。
 
+> **2026-07-10 更新**（PR #477 评审）：复核了 memU 最新 ADR（[0006](https://github.com/NevaMind-AI/memU/blob/main/docs/adr/0006-from-memory-item-category-to-tracked-workspace-memorization.md) / [0007](https://github.com/NevaMind-AI/memU/blob/main/docs/adr/0007-three-independent-memory-lines-wiki-graph.md) / [0008](https://github.com/NevaMind-AI/memU/blob/main/docs/adr/0008-two-integration-surfaces-hooks-and-api.md)）。memU 正在放弃旧的 memorize/retrieve：检索收敛为**单趟混合搜索**（BM25 + embedding 融合，0 次 LLM 调用，明确无图、无多跳、无 sufficiency 管线），写入收敛为 trajectory 单次抽取 + 异步后台（hook 契约 on_turn / on_prompt）。下方借鉴清单已同步到该终态。
+
 ## 决策
 
 **不引入 `memu-py` 依赖。** 在 LLM Mode（ADR-0001）的自研实现中借鉴 memU 已被验证的设计：
 
-1. **memory_type 分类体系**：profile / event / knowledge / behavior / skill / tool 六类，作为 categories 的顶层组织参考
-2. **提取 prompt 设计原则**：条目自包含（self-contained）、与语料同语言（中文语料产中文记忆）、叙述者/主体区分、排除短时效信息（no-ephemera）
-3. **分阶段检索 + 提前终止**：route_intention → route_file(category) → recall_entries 的漏斗式管线，每阶段带 sufficiency 检查
-4. **零基础设施本地向量存储**：SQLite + JSON embeddings + 暴力余弦（RAG Mode 可复用此方案，不引入独立向量库）
+1. **L0 → L1 → L2 数据分层**（memU ADR-0007）：resource（原始来源）→ category 文档（每分类一个 markdown 文件）→ item 切片（检索基本单元）。resource / item / category 三层保留。
+2. **提取 prompt 设计原则**：条目自包含（self-contained）、与语料同语言（中文语料产中文记忆）、叙述者/主体区分、排除短时效信息（no-ephemera）；memory_type 六类（profile / event / knowledge / behavior / skill / tool）作 categories 顶层参考
+3. **单趟混合检索，检索不调 LLM**（memU ADR-0007 终态）：BM25 关键词为底、embedding 余弦为可选融合（min-max 归一）。memU 已放弃旧的 route_intention / sufficiency 多级 LLM 管线与图遍历——直接采用其终态，不重走弯路
+4. **集成时序 = hook 契约**（memU ADR-0008）：写入异步后台（`on_turn` ≈ 本项目 `HookPlugin.on_after_turn`）、注入同步临界路径 + token 预算 + fail-open（`on_prompt` ≈ `on_before_turn`）
 
 ### Fallback（备选，暂不执行）
 

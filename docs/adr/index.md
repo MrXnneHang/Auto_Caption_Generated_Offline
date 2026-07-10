@@ -33,4 +33,4 @@ ADR（Architecture Decision Record）记录项目中**影响架构方向的决�
 | 编号 | 标题 | 状态 | 日期 |
 |------|------|------|------|
 | [0001](./0001-llm-mode-memory) | LLM Mode 记忆系统 — categories + wiki-links 取代 Neo4j 语义节点 | Accepted | 2026-07-08 |
-| [0002](./0002-memu-design-not-dependency) | memU — 借鉴设计而非引入依赖 | Proposed | 2026-07-08 |
+| [0002](./0002-memu-design-not-dependency) | memU — 借鉴设计而非引入依赖 | Accepted | 2026-07-08（修订 2026-07-10） |
