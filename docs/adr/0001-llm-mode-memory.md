@@ -1,7 +1,8 @@
-# ADR-0001: LLM Mode 记忆系统 — categories + wiki-links 取代 Neo4j 语义节点
+# ADR-0001: 记忆管线（memory pipeline）— categories + wiki-links 取代 Neo4j 语义节点
 
 - **状态**：Accepted
-- **日期**：2026-07-08，修订 2026-07-10（PR #477 评审：检索去 LLM 化、零基础设施约束；二次修订：撤销双模开关，收敛为单管线 + embedding 渐进增强；三次修订：磁盘无不可读真相——索引不落盘，SQLite 移出设计，补可观测性；四次修订：向量不进物理内存——memmap + 量化分层，VectorIndex 可插拔端口（借鉴 mem0），vectors.json 作废改 .npy）
+- **曾用名**：LLM Mode（五次修订更名：双模框架废弃后，"Mode" 暗示并不存在的并行模式；文件名保留 `0001-llm-mode-memory` 以稳定既有链接）
+- **日期**：2026-07-08，修订 2026-07-10（PR #477 评审：检索去 LLM 化、零基础设施约束；二次修订：撤销双模开关，收敛为单管线 + embedding 渐进增强；三次修订：磁盘无不可读真相——索引不落盘，SQLite 移出设计，补可观测性；四次修订：向量不进物理内存——memmap + 量化分层，VectorIndex 可插拔端口（借鉴 mem0），vectors.json 作废改 .npy；五次修订：更名 LLM Mode → 记忆管线）
 - **关联**：[#471](https://github.com/XnneHangLab/XnneHangLab/issues/471) / [#468](https://github.com/XnneHangLab/XnneHangLab/issues/468)（设计来源）、[#470](https://github.com/XnneHangLab/XnneHangLab/issues/470) / [#469](https://github.com/XnneHangLab/XnneHangLab/issues/469)（后续：Multi-Character 记忆）、[ADR-0002](./0002-memu-design-not-dependency)
 
 ## 背景
@@ -14,7 +15,7 @@ memory_bench 的 Neo4j 图目前有 10 种节点类型，但只支撑可视化�
 
 ## 决策
 
-引入 **LLM Mode**：扁平存储 + categories 分类 + wiki-links 跨类关联，取代 Neo4j 语义节点。
+引入**记忆管线**（曾用名 LLM Mode）：扁平存储 + categories 分类 + wiki-links 跨类关联，取代 Neo4j 语义节点。
 
 ### 硬性约束（2026-07-10 评审补充，见 PR #477 评论）
 
@@ -33,9 +34,9 @@ memory_bench 的 Neo4j 图目前有 10 种节点类型，但只支撑可视化�
 1. **Categories** 取代 Domain / Topic / Scene / Predicate 节点，如 `daily_life`、`preferences`、`personality`、`reading`。
 2. **Wiki-links** 以 `[[category:item-name]]` 格式直接写在条目内容里。检索命中条目后**机械展开**链接（按名字精确查找，默认一跳）拉取关联条目——不走 LLM，不建图存储。
 3. **Metadata** 承载结构信息（owner / source_conv / timestamp），不再需要图节点表达。
-4. **单一管线，不做双模开关**：LLM Mode 是唯一的运行时记忆管线；embedding 是管线内按能力启用的**可选增强项**（见"检索"节），不构成第二个模式。mem0 + Qdrant + Neo4j 一套（旧称 RAG Mode）退回 memory_bench 的本职——**基准对照**，迁移期保留为回退后端。
+4. **单一管线，不做双模开关**：记忆管线是唯一的运行时管线；embedding 是管线内按能力启用的**可选增强项**（见"检索"节），不构成第二个模式。mem0 + Qdrant + Neo4j 一套（旧称 RAG Mode）退回 memory_bench 的本职——**基准对照**，迁移期保留为回退后端。
 
-> 修订说明：#471 原文的"LLM Mode / RAG Mode 独立开关"在 2026-07-10 评审中被撤销。理由：简化后的 LLM Mode 检索（BM25 + 可选 embedding 融合）与"RAG"的分界线不在检索算法，而在**记忆表示**——把它们做成两条并行运行时管线只会重复建设。默认 LLM Mode，有 embedding 就在管线内用上，没有就纯文本检索。
+> 修订说明：#471 原文的"LLM Mode / RAG Mode 独立开关"在 2026-07-10 评审中被撤销。理由：简化后的检索（BM25 + 可选 embedding 融合）与"RAG"的分界线不在检索算法，而在**记忆表示**——把它们做成两条并行运行时管线只会重复建设。默认单管线，有 embedding 就在管线内用上，没有就纯文本检索。
 
 ### 写入（memorize）——每轮至多 1 次 LLM 调用，异步
 
@@ -116,4 +117,4 @@ memory_bench 的 Neo4j 图目前有 10 种节点类型，但只支撑可视化�
 
 **实施**
 
-按里程碑拆分为独立 issue（挂在 [#471](https://github.com/XnneHangLab/XnneHangLab/issues/471) 下）：存储层 → wiki-link 检索 → 插件接入（默认 LLM Mode + embedding 可选融合 + mem0 迁移回退）→ Neo4j 语义节点退役。
+按里程碑拆分为独立 issue（挂在 [#471](https://github.com/XnneHangLab/XnneHangLab/issues/471) 下）：存储层 → wiki-link 检索 → 插件接入（默认记忆管线 + embedding 可选融合 + mem0 迁移回退）→ Neo4j 语义节点退役。

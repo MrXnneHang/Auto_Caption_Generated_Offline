@@ -18,7 +18,7 @@
 
 ## 决策
 
-**不引入 `memu-py` 依赖。** 在 LLM Mode（ADR-0001）的自研实现中借鉴 memU 已被验证的设计：
+**不引入 `memu-py` 依赖。** 在记忆管线（ADR-0001）的自研实现中借鉴 memU 已被验证的设计：
 
 1. **L0 → L1 → L2 数据分层**（memU ADR-0007）：resource（原始来源）→ category 文档（每分类一个 markdown 文件）→ item 切片（检索基本单元）。resource / item / category 三层保留。
 2. **提取 prompt 设计原则**：条目自包含（self-contained）、与语料同语言（中文语料产中文记忆）、叙述者/主体区分、排除短时效信息（no-ephemera）；memory_type 六类（profile / event / knowledge / behavior / skill / tool）作 categories 顶层参考
@@ -52,4 +52,4 @@
 
 - `memu-py` 恢复支持 Python 3.11/3.12，或本项目完成 3.13 升级
 - memU 引入 in-content links 机制
-- 自研 LLM Mode 实现两个里程碑后效果不达预期（届时启用 sidecar fallback）
+- 自研记忆管线实现两个里程碑后效果不达预期（届时启用 sidecar fallback）
