@@ -1,84 +1,50 @@
-# Memory Bench 文档地图（docs/）
+# Memory Bench 文档地图
 
-本目录收录 Memory Bench 的规范与提示词文档，供数据构建、标注、回放、抽取与图谱导出流程统一使用。
+本目录收录 Memory Bench 的工作流文档：管线指南、schema 参考、提示词说明与 server 设计。
+
+> 运行时 prompt 资产（标注/抽取提示词、场景/角色 canon）与自动生成的 schema 参考位于仓库的 `memory_bench/docs/`；本站文档是对整个工作流的说明与补充。
 
 ---
 
 ## 文档清单
 
-1. `README.md`
-   - 模块说明、目录结构、快速跑通路径。
+### 总览
 
-2. `00_DOC_MAP.md`
-   - 文档总览、推荐阅读顺序、职责分工（本文件）。
+- [脚本指南](./scripts-guide) — 离线/实时管线全流程、执行顺序、清理命令。
+- [Typing 设计](./typing-design) — memory_bench 类型系统的分阶段设计。
 
-3. `05_SCRIPTS_GUIDE.md`
-   - scripts 作用、调用示例（统一 `uv run` 方式）、输入输出与返回码、常见排错。
+### Server 架构
 
-4. `20_ANNOTATOR_PROMPT.md`
-   - 章节文本 → JSONL events 的标注提示词（raw/norm → events）。
+- [设计理念](./server/design) — 记忆后端定位、mem0 + Neo4j 架构、与 `src/lab` 的关系。
+- [路由与端点](./server/routes) — `/memory/search`、`/memory/add`、`/memory/health` 与 OpenAI 兼容代理。
 
-5. `21_SCENE_CANON.md`
-   - 场景宪法：`chill_ai_chat` 的世界边界、主题范围与一致性约束。
+### Schema
 
-6. `22_PERSONA_CANON.md`
-   - 角色圣典：聪音的人设事实、风格与行为边界。
+- [节点 Schema（离线）](./schema/node) — 由 `export_node_schema.py` 自动生成。
+- [边 Schema（离线）](./schema/edge) — 由 `export_edge_schema.py` 自动生成。
+- [节点 Schema（实时）](./schema/realtime-node) — 实时管线与离线管线的兼容性对比。
+- [边 Schema（实时）](./schema/realtime-edge) — 实时边 schema 与验证方法。
+- [锚点与模板](./schema/anchors) — 全链路数据 schema 与真实样例（Event / Mem0 Export / Claim / Entity / Graph IR），带版本号。
 
-7. `23_CLAIM_EXTRACTOR_PROMPT.md`
-   - Mem0 export → claim/entity JSONL 的抽取提示词（含 predicate/entity_type 白名单、evidence 回链、deterministic claim_id）。
+### Prompt 设计
 
-8. `40_ANCHORS_AND_TEMPLATES.md`
-   - 全链路数据 schema 与真实样例（Event / Mem0 Export / Claim / Entity / Graph IR），带版本号。
+- [标注提示词](./prompts/annotator) — 章节文本 → JSONL events 的标注提示词。
+- [场景宪法](./prompts/scene-canon) — 世界边界、主题范围与一致性约束。
+- [角色圣典](./prompts/persona-canon) — 人设事实、风格与行为边界。
+- [Claim 抽取提示词](./prompts/claim-extractor) — mem0 export → claim/entity JSONL（含 predicate/entity_type 白名单、evidence 回链）。
 
-9. `06_NODE_SCHEMA_REFERENCE.md`
-   - Neo4j 图谱 Schema 参考：节点类型、关系类型、完整示例（由 `export_node_schema.py` 自动生成，离线管线）。
+### 脚本详情
 
-10. `07_REALTIME_SCHEMA_REFERENCE.md`
-   - 实时管线 Neo4j 图谱 Schema 参考：与离线管线的兼容性对比、差异说明、验证方法。
-
-11. `08_EDGE_SCHEMA_REFERENCE.md`
-   - Neo4j 图谱边 Schema 参考：边类型、边属性、完整示例（由 `export_edge_schema.py` 自动生成，离线管线）。
-
-12. `09_REALTIME_EDGE_SCHEMA_REFERENCE.md`
-   - 实时管线 Neo4j 图谱边 Schema 参考：与离线管线的兼容性对比、差异说明、验证方法。
+[scripts/](./scripts/index) 下有每个管线脚本的独立文档（CLI 参数、输入输出、排错）。
 
 ---
 
 ## 推荐阅读顺序
 
-- 第零步：`05_SCRIPTS_GUIDE.md`（先知道怎么跑、产物在哪）
-- 第一步：`21_SCENE_CANON.md`（场景边界）
-- 第二步：`22_PERSONA_CANON.md`（人设边界）
-- 第三步：`20_ANNOTATOR_PROMPT.md`（events 标注）
-- 第四步：`40_ANCHORS_AND_TEMPLATES.md`（schema / 锚点 / 命名 / 真实数据样例）
-- 第五步：`replay_mem0` 相关（脚本手册中）
-- 第六步：`23_CLAIM_EXTRACTOR_PROMPT.md`（claim/entity 抽取）
-
----
-
-## 职责分工（Docs Responsibilities）
-
-- `21_SCENE_CANON.md`
-  - 定义场景层事实边界（Scene-level ground truth）。
-  - 约束"可聊/不建议聊"的主题范围与语境稳定性。
-
-- `22_PERSONA_CANON.md`
-  - 定义角色层事实边界（Character-level ground truth）。
-  - 约束聪音的人设事实、风格与行为边界。
-
-- `20_ANNOTATOR_PROMPT.md`
-  - 定义标注流程的 LLM 提示词。
-  - 依赖 `21` + `22` 作为 canon 输入。
-
-- `23_CLAIM_EXTRACTOR_PROMPT.md`
-  - 定义 claim/entity 抽取的 LLM 提示词。
-  - 依赖 `40` 的 schema 定义。
-
-- `40_ANCHORS_AND_TEMPLATES.md`
-  - 定义全链路共享 schema、锚点规范、命名规则。
-  - 所有数据格式的 single source of truth。
-  - 带版本号，schema 变更时 bump。
-
-- `05_SCRIPTS_GUIDE.md`
-  - 脚本使用手册，与仓库当前脚本目录对齐。
-  - 统一使用 `uv run` 调用方式。
+1. [脚本指南](./scripts-guide)（先知道怎么跑、产物在哪）
+2. [场景宪法](./prompts/scene-canon)（场景边界）
+3. [角色圣典](./prompts/persona-canon)（人设边界）
+4. [标注提示词](./prompts/annotator)（events 标注）
+5. [锚点与模板](./schema/anchors)（schema / 锚点 / 命名 / 真实数据样例）
+6. [replay_mem0](./scripts/replay-mem0)（mem0 回放）
+7. [Claim 抽取提示词](./prompts/claim-extractor)（claim/entity 抽取）

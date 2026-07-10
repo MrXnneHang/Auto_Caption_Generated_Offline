@@ -8,35 +8,12 @@
 ## 目录结构
 
 ```
-docs/
-├── 05_SCRIPTS_GUIDE.md          # 本文件（路由索引）
-├── scripts/                 # 脚本详情目录
-│   ├── build_index.md
-│   ├── annotate_all.md
-│   ├── compile_events.md
-│   ├── replay_mem0.md
-│   ├── claimify_all.md
-│   ├── compiled_claims.md
-│   ├── mem0_to_graph.md
-│   ├── claims_to_graph.md
-│   ├── graph_to_cypher.md
-│   ├── neo4j_apply_cypher.md
-│   ├── latest_file.md
-│   ├── neo4j_clear.md
-│   ├── export_node_schema.md
-│   ├── export_edge_schema.md
-│   ├── startup.md
-│   ├── chat_server.md
-│   ├── chat_router.md
-│   ├── conversation_store.md
-│   ├── claim_extractor.md
-│   ├── graph_writer.md
-│   ├── neo4j_queries.md
-│   ├── chat_cli.md
-│   ├── bench_logger.md
-│   ├── rate_limiter.md
-│   └── tag_registry.md
-└── ...
+docs/memory-bench/
+├── scripts-guide.md         # 本文件（路由索引）
+├── scripts/                 # 脚本详情目录（每脚本一页）
+├── schema/                  # 节点 / 边 / 锚点 schema 参考
+├── prompts/                 # 提示词设计说明
+└── server/                  # server 设计与路由文档
 ```
 
 ---
@@ -139,9 +116,8 @@ uv run memory_bench/scripts/claimify_all.py --input "$latest_export"
 uv run memory_bench/scripts/compiled_claims.py --force
 
 # 6) graph → cypher
-just mem0-to-graph
-just claims-to-graph
-just graph-to-cypher
+just memory-item-to-cypher     # mem0 归属图 → Cypher
+just claim-items-to-cypher     # claims 语义图 → Cypher
 
 # 7) 导入 Neo4j
 just neo4j-apply-cypher
@@ -158,25 +134,28 @@ just neo4j-apply-cypher
 ### 2.1 架构概览
 
 ```
-AIChat 客户端
-     ↓  POST /memory/chat
-chat_router.py
-     ├─ 读取 conversation_store（历史对话）
-     ├─ 拼接 system prompt（prompts/）
-     ├─ 调用 LLM → 生成回复
-     ├─ 保存对话到 conversation_store
-     └─ [可选] 实时图谱写入
-            ├─ claim_extractor → 提取 claim/entity
-            └─ graph_writer → Cypher MERGE → Neo4j
+OpenAI 兼容客户端（AIChat 等）
+     ↓  POST /memory/v1/chat/completions
+proxy_router.py（透明代理）
+     ├─ mem0 检索相关记忆 → 注入 system prompt
+     ├─ 请求原样透传上游 LLM（stream / tool_call 均支持）
+     ├─ 响应返回客户端
+     └─ 异步写回 mem0（仅 user + assistant 轮次）
+            └─ [可选] 实时图谱写入
+                   ├─ claim_extractor → 提取 claim/entity
+                   └─ graph_writer → Cypher MERGE → Neo4j
 ```
+
+主链路（`src/lab`）不经过代理：`MemoryPlugin` 直接调用 `/memory/search` 与 `/memory/add`。
+
+> 历史说明：早期的 `chat_router.py`（`/memory/chat`）与 `conversation_store.py` 已迁移到 `src/lab`（#274）。
 
 ### 2.2 核心模块
 
 | 模块 | 说明 |
 |------|------|
-| [`chat_router.md`](./scripts/chat-router.md) | FastAPI router，`/memory/chat` 端点 |
+| `proxy_router.py` | OpenAI 兼容透明代理，`/memory/v1/chat/completions`（详见 [路由与端点](./server/routes)） |
 | [`chat_server.md`](./scripts/chat-server.md) | 独立启动器 + CLI |
-| [`conversation_store.md`](./scripts/conversation-store.md) | 对话 JSONL 持久化（按日期分文件） |
 | [`startup.md`](./scripts/startup.md) | 初始化帮助函数（env 加载、配置解析） |
 
 ### 2.3 实时图谱写入
@@ -192,16 +171,14 @@ chat_router.py
 | 工具 | 说明 |
 |------|------|
 | [`chat_cli.md`](./scripts/chat-cli.md) | 终端交互式对话客户端 |
-| [`file_tools.md`](./scripts/file-tools.md) | 文件操作工具（READ/WRITE/EDIT） |
-| [`search_tools.md`](./scripts/search-tools.md) | 搜索工具（SEARCH） |
 
 ### 2.5 启动方式
 
 ```bash
-# 启动 Server（默认端口 8080）
-just memory-chat-server
+# 启动 Server（user_id / agent_id / agent_name / port）
+just memory-chat-server xnne congyin 聪音 8080
 
-# 启动 Server（自定义端口）
+# 直接启动（自定义端口）
 uv run memory_bench/server/chat_server.py --port 9090
 
 # 启用实时图谱写入
@@ -219,8 +196,6 @@ just memory-chat-cli
 
 | 模块 | 说明 |
 |------|------|
-| [`file_tools.md`](./scripts/file-tools.md) | 文件操作工具（READ/WRITE/EDIT） |
-| [`search_tools.md`](./scripts/search-tools.md) | 搜索工具（SEARCH） |
 | [`bench_logger.md`](./scripts/bench-logger.md) | 统一彩色日志 |
 | [`rate_limiter.md`](./scripts/rate-limiter.md) | LLM API 令牌桶 + 并发控制 |
 | [`tag_registry.md`](./scripts/tag-registry.md) | tag 归一化与候选选择 |
@@ -236,7 +211,7 @@ just memory-chat-cli
 | **Claim 提取** | `claimify_all.py` → 文件 | `claim_extractor.py` → 内存 |
 | **图谱构建** | `claims_to_graph.py` → 文件 | `graph_writer.py` → 内存 |
 | **Neo4j 写入** | `neo4j_apply_cypher.py` 执行文件 | `graph_writer.py` 直接 `docker exec` |
-| **对话存储** | 无（一次性回放） | `conversation_store.py`（JSON 文件） |
+| **对话存储** | 无（一次性回放） | 无（代理透传，由调用方 / `src/lab` 管理） |
 
 ---
 
@@ -281,8 +256,8 @@ just memory-chat-cli
 
 ## 七、相关文档
 
-- [`00_DOC_MAP.md`](./.md) — 文档地图
-- [`06_NODE_SCHEMA_REFERENCE.md`](./schema/node.md) — Neo4j 节点 Schema
-- [`08_EDGE_SCHEMA_REFERENCE.md`](./schema/edge.md) — Neo4j 边 Schema
-- [`30_TYPING_DESIGN.md`](./typing-design.md) — 类型设计
-- [`40_ANCHORS_AND_TEMPLATES.md`](./schema/anchors.md) — 锚点与模板
+- [文档地图](./index.md)
+- [节点 Schema](./schema/node.md) — Neo4j 节点 Schema
+- [边 Schema](./schema/edge.md) — Neo4j 边 Schema
+- [Typing 设计](./typing-design.md) — 类型设计
+- [锚点与模板](./schema/anchors.md) — 全链路数据 schema 与样例

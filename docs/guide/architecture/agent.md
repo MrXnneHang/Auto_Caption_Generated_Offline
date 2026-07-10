@@ -36,7 +36,7 @@ agent/
 
 ### 核心类型（`types.py`）
 
-原 `src/lab/mcp/_typing.py` + `util.py` 迁移至此，被整个 `agent/` 及 `tools/` 广泛使用：
+Agent 层的公共类型与工具函数，被整个 `agent/` 及 `tools/` 广泛使用：
 
 | 类型 / 函数 | 说明 |
 |------------|------|

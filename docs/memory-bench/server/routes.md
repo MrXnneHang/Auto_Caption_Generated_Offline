@@ -1,13 +1,19 @@
 # 路由与端点
 
-Memory Bench Server 暴露三个 API，挂载在 FastAPI 应用的 `/memory` 前缀下：
+Memory Bench Server 暴露两组 API，挂载在 FastAPI 应用的 `/memory` 前缀下：
 
 ```python
 app.include_router(memory_router, prefix="/memory")
 # /memory/search   ← 记忆检索
 # /memory/add      ← 记忆写入 + 图谱管线
 # /memory/health   ← 健康检查
+
+app.include_router(proxy_router, prefix="/memory")
+# /memory/v1/chat/completions ← OpenAI 兼容透明代理（记忆检索注入 + 异步写回）
+# /memory/v1/models           ← 上游模型列表透传
 ```
+
+本页详述记忆 API（`memory_router`）；代理端点对客户端完全透明（换个 `base_url` 即可接入），行为见 [设计理念](./design)。
 
 ---
 

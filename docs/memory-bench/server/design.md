@@ -128,9 +128,10 @@ memory_bench/server/
 ├── chat_cli.py             # REPL 实现
 ├── startup.py              # 初始化逻辑（mem0 / OpenAI / 图谱管线）
 ├── router.py               # FastAPI 路由（/search、/add、/health）
+├── proxy_router.py         # OpenAI 兼容透明代理（/v1/chat/completions、/v1/models）
 ├── claim_extractor.py      # LLM Claim 提取
-├── neo4j_queries.py        # Cypher 语句模板与写入逻辑
-└── conversation_store.py   # 对话持久化（chat_server 用）
+├── graph_writer.py         # 实时图谱写入（Cypher MERGE）
+└── neo4j_queries.py        # Cypher 语句模板与写入逻辑
 ```
 
 ---

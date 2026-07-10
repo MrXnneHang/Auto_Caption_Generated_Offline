@@ -279,7 +279,7 @@ touch memory_bench/typing/common.py
 
 ### 第三步：更新文档
 
-- 在 `05_SCRIPTS_GUIDE.md` 中添加 typing 模块说明
+- 在 `scripts-guide.md` 中添加 typing 模块说明
 - 在本文档中更新进度
 
 ---

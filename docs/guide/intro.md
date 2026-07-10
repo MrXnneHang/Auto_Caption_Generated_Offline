@@ -55,7 +55,8 @@ XnneHangLab 是支撑这两个实验的引擎——提供 Agent 框架、MCP 工
 |---------|------|
 | 🧩 **mem0** | 通用记忆层，自动从对话中提取和存储记忆（User / Session / Agent 多层级） |
 | 📝 **memsearch** | Markdown-first，基于文件的记忆系统（受 OpenClaw 启发） |
-| 🔮 **zep / memu** | 规划中 — 更多记忆架构的可行性探索 |
+| 🔮 **memU** | 设计借鉴 — categories + memory types 分类体系（见 ADR-0002，不直接引入依赖） |
+| 🔮 **zep** | 规划中 — 更多记忆架构的可行性探索 |
 
 根据场景选择合适的记忆方案，Neo4j 只是可视化手段之一。
 
@@ -69,10 +70,10 @@ XnneHangLab 是支撑这两个实验的引擎——提供 Agent 框架、MCP 工
 |------|------|
 | 🖥️ 后端框架 | FastAPI + WebSocket |
 | 🤖 LLM 调用 | OpenAI Compatible API（统一接口） |
-| 🎙️ 语音识别 | FunASR / Whisper |
-| 🔊 语音合成 | GPT-SoVITS / Qwen-TTS |
-| 🔧 工具协议 | MCP (Model Context Protocol) |
-| 🎨 前端 | 独立仓库（VTuber-Web / AIChat） |
+| 🎙️ 语音识别 | Sherpa-ONNX / Qwen-ASR |
+| 🔊 语音合成 | Genie-TTS / GSV-TTS-Lite / Qwen-TTS |
+| 🔧 工具协议 | MCP (Model Context Protocol) + 内置 function calling |
+| 🎨 前端 | Electron + React（`frontend/` 子模块）+ Tauri Launcher（`launcher/` 子模块） |
 
 ---
 
@@ -86,15 +87,16 @@ XnneHangLab 是支撑这两个实验的引擎——提供 Agent 框架、MCP 工
 ```
 XnneHangLab/
 ├── src/lab/              # 主项目（VTuber 引擎）
-│   ├── agent/            # 🤖 LLM 调用与记忆管理
+│   ├── agent/            # 🤖 Agent 引擎与 LLM 适配
+│   ├── plugins/          # 🧩 插件实现（memory / mood_chat / visual_observer ...)
 │   ├── api/              # 🌐 HTTP 路由与客户端
 │   ├── asr/              # 🎙️ 语音识别
-│   ├── mcp/              # 🔧 工具调用框架
 │   └── conversations/    # 💬 对话编排
-├── src/memory_bench/     # 记忆评测子项目
-│   ├── graph/            # 🕸️ 知识图谱构建
-│   ├── chat/             # 💬 Memory Chat Server
-│   └── scripts/          # ⚙️ 数据处理脚本
+├── memory_bench/         # 记忆评测子项目
+│   ├── scripts/          # ⚙️ 离线管线脚本（标注 / 回放 / 图谱）
+│   └── server/           # 💬 记忆检索 server（mem0 + Neo4j）
+├── frontend/             # 🎨 Electron 前端（子模块）
+├── launcher/             # 🚀 Tauri 启动器（子模块）
 └── docs/                 # 📖 你现在看的文档
 ```
 
