@@ -274,11 +274,6 @@ def main() -> None:
     if (value := _parse_int_env("LOCAL_EMBEDDING_N_GPU_LAYERS")) is not None:
         settings.local_embedding.n_gpu_layers = value
 
-    if "MEMORY_BENCH_SERVER_API_KEY" in os.environ:
-        settings.memory_bench.server_api_key = os.environ.get("MEMORY_BENCH_SERVER_API_KEY", "")
-
-    if (value := _parse_bool_env("PKG_MEMORY_BENCH")) is not None:
-        settings.package.memory_bench = value
     if (value := _parse_bool_env("PKG_LLM_TRANSLATE")) is not None:
         settings.package.llm_translate = value
     if (value := _parse_bool_env("PKG_LOCAL_EMBEDDING")) is not None:
@@ -306,8 +301,6 @@ def main() -> None:
     logger.info("local_embedding.model_path: {}", settings.local_embedding.model_path)
     logger.info("local_embedding.pooling_type: {}", settings.local_embedding.pooling_type)
     logger.info("local_embedding.n_gpu_layers: {}", settings.local_embedding.n_gpu_layers)
-    logger.info("memory_bench.server_api_key: {}", mask_api_key(settings.memory_bench.server_api_key))
-    logger.info("package.memory_bench: {}", settings.package.memory_bench)
     logger.info("package.llm_translate: {}", settings.package.llm_translate)
     logger.info("package.local_embedding: {}", settings.package.local_embedding)
     logger.info("package.qwen_tts: {}", settings.package.qwen_tts)

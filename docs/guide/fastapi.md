@@ -62,8 +62,7 @@ uv run run_server.py --port 8080
 │
 ├─ /client-ws                         🔌 WebSocket（Open-LLM-VTuber 对话）
 │
-├─ /memory                            🧠 Memory Bench（需要 memory_bench=true）
-│  ├─ POST /v1/chat/completions       OpenAI 兼容代理
+├─ /memory                            🧠 记忆聊天（需要 agent.memory_chat_profile）
 │  └─ POST /chat                      Memory Chat（带 session 管理 + 工具调用）
 │
 ├─ /web-tool                          🛠️ 静态 Web 工具页
@@ -359,21 +358,15 @@ Open-LLM-VTuber 前端的 WebSocket 连接端点。每个连接分配唯一 `cli
 
 ---
 
-## 🧠 Memory Bench
+## 🧠 记忆聊天
 
-**前缀**：`/memory` — **源码**：`memory_bench/server/`
+**前缀**：`/memory` — **源码**：`src/lab/api/routes/chat.py`
 
-需要 `lab.toml` 中 `[package] memory_bench = true`。配置从 `memory_bench/.env.benchmark` 独立加载。
-
-### POST `/memory/v1/chat/completions`
-
-OpenAI 兼容的透明代理端点。
+需要 `lab.toml` 中 `[agent] memory_chat_profile` 指向一个 profile（如 `profiles/congyin.toml`）。
 
 ### POST `/memory/chat`
 
-Memory Chat 端点，带 session 管理、上下文存储、记忆注入和工具调用（READ/WRITE/EDIT/SEARCH）。
-
-详见 [Memory Bench 文档](/memory-bench/)。
+Memory Chat 端点，带 session 管理、上下文存储、记忆注入和工具调用。长期记忆由 profile 中启用的 `wikimem` 插件承担（markdown 文件记忆，见 ADR-0001）。
 
 ---
 
@@ -405,7 +398,7 @@ Memory Chat 端点，带 session 管理、上下文存储、记忆注入和工�
 | `genie_tts = true` | `/tts/genie-tts/*` |
 | `gsv_lite = true` | `/tts/gsv-lite/*` |
 | `qwen_tts = true` | `/tts/qwen-tts/*` |
-| `memory_bench = true` | `/memory/*` |
+| `agent.memory_chat_profile 非空` | `/memory/chat` |
 
 DeepLX (`/translate/*`)、WebSocket (`/client-ws`)、静态文件路由始终加载。
 

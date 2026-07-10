@@ -1,7 +1,7 @@
 """按日期分片的 JSON 历史存储实现。
 
-该模块负责把对话轮次持久化到按日期命名的 JSON 文件中，便于
-`memory_bench` 场景复用，也避免与 runtime 层的 `lab.conversations`
+该模块负责把对话轮次持久化到按日期命名的 JSON 文件中，供
+`/memory/chat` 等链路复用，也避免与 runtime 层的 `lab.conversations`
 职责混淆。
 
 目录结构示例::

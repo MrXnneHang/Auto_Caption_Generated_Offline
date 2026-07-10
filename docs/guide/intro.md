@@ -49,16 +49,16 @@ XnneHangLab 是支撑这两个实验的引擎——提供 Agent 框架、MCP 工
 
 你和 AI 聊了几个月，某天你问："我上次说过什么来着？"
 
-她不只是翻聊天记录——配合 **Memory Bench** 子项目，我们在测试和杂糅不同的记忆系统：
+她不只是翻聊天记录——长期记忆由自研**记忆管线**（[wikimem](https://github.com/XnneHangLab/wikimem)，见 ADR-0001）承担：
 
-| 记忆系统 | 特点 |
-|---------|------|
-| 🧩 **mem0** | 通用记忆层，自动从对话中提取和存储记忆（User / Session / Agent 多层级） |
-| 📝 **memsearch** | Markdown-first，基于文件的记忆系统（受 OpenClaw 启发） |
-| 🔮 **memU** | 设计借鉴 — categories + memory types 分类体系（见 ADR-0002，不直接引入依赖） |
-| 🔮 **zep** | 规划中 — 更多记忆架构的可行性探索 |
+| 特性 | 说明 |
+|------|------|
+| 📝 **markdown 是唯一事实源** | 每分类一个文件、每条记忆一个条目，人可读可改可 diff |
+| 🔗 **wiki-links 关联** | `[[category:item]]` 内联链接，检索命中后机械展开一跳（实测比纯 BM25 召回 +29~50pp） |
+| 🔍 **零基础设施检索** | 内存 BM25 兜底，embedding 融合可选（`[embed]` extra），端点挂了自动回退 |
+| 🧬 **设计借鉴 memU** | categories + memory types 分类体系（见 ADR-0002，不引入依赖） |
 
-根据场景选择合适的记忆方案，Neo4j 只是可视化手段之一。
+历史方案 mem0 + Neo4j（memory_bench 子项目）已于 2026-07 移除——数据说话之后被文件优先方案取代。
 
 > [!NOTE] 🧠 这不是检索，是在探索"AI 如何真的记得"。
 
@@ -88,13 +88,11 @@ XnneHangLab 是支撑这两个实验的引擎——提供 Agent 框架、MCP 工
 XnneHangLab/
 ├── src/lab/              # 主项目（VTuber 引擎）
 │   ├── agent/            # 🤖 Agent 引擎与 LLM 适配
-│   ├── plugins/          # 🧩 插件实现（memory / mood_chat / visual_observer ...)
+│   ├── plugins/          # 🧩 插件实现（wikimem / mood_chat / visual_observer ...)
 │   ├── api/              # 🌐 HTTP 路由与客户端
 │   ├── asr/              # 🎙️ 语音识别
 │   └── conversations/    # 💬 对话编排
-├── memory_bench/         # 记忆评测子项目
-│   ├── scripts/          # ⚙️ 离线管线脚本（标注 / 回放 / 图谱）
-│   └── server/           # 💬 记忆检索 server（mem0 + Neo4j）
+├── packages/wikimem/     # 🧠 记忆管线（子模块，独立 pip 包）
 ├── frontend/             # 🎨 Electron 前端（子模块）
 ├── launcher/             # 🚀 Tauri 启动器（子模块）
 └── docs/                 # 📖 你现在看的文档

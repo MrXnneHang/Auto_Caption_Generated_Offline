@@ -491,18 +491,6 @@ def _check_profiles(settings: XnneHangLabSettings) -> list[str]:
                         profile_label=memory_agent_profile,
                         plugins_obj=plugins_dict,
                     )
-                    enabled_plugins_obj = plugins_dict.get("enabled")
-                    enabled_plugins: list[str] = []
-                    if isinstance(enabled_plugins_obj, list):
-                        for plugin in cast("list[object]", enabled_plugins_obj):
-                            if isinstance(plugin, str):
-                                enabled_plugins.append(plugin)
-                    if "memory" in enabled_plugins and not settings.package.memory_bench:
-                        errors.append(
-                            " [package]\n"
-                            f" profile '{memory_agent_profile}' 启用了 memory 插件，但 memory_bench = false\n"
-                            " -> 在 [package] 下设置 memory_bench = true"
-                        )
 
     memory_chat_profile = settings.agent.memory_chat_profile
     if memory_chat_profile:
@@ -593,10 +581,6 @@ PACKAGE_RULES: list[PackageRule] = [
                 install_hint="just install-llm-translate",
             ),
         ],
-    ),
-    PackageRule(
-        package_name="memory_bench",
-        depends_on=["local_embedding"],
     ),
     PackageRule(
         package_name="sherpa_asr",

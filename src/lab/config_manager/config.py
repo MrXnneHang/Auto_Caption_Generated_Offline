@@ -13,7 +13,6 @@ from lab.config_manager.abs_root import RootAbsDir
 from lab.config_manager.agent import AgentSettings
 from lab.config_manager.asr import ASRSettings, ASRSettingsTitle
 from lab.config_manager.embedding import LocalEmbeddingSetting
-from lab.config_manager.memory_bench import MemoryBenchSettings
 from lab.config_manager.package import PackagesSettings
 from lab.config_manager.server import ServerSettings
 
@@ -103,7 +102,6 @@ class XnneHangLabSettings(BaseModel):
         package: 可选后端服务开关。
         root: 工作区根目录配置。
         server: 服务器配置。
-        memory_bench: memory_bench 后端配置。
     """
 
     conf_version: Annotated[str, Field(CURRENT_CONF_VERSION, title="配置版本")]
@@ -113,7 +111,6 @@ class XnneHangLabSettings(BaseModel):
     package: Annotated[PackagesSettings, Field(PackagesSettings())]  # pyright: ignore[reportCallIssue]
     root: Annotated[RootAbsDir, Field(RootAbsDir())]  # pyright: ignore[reportCallIssue]
     server: Annotated[ServerSettings, Field(ServerSettings())]  # pyright: ignore[reportCallIssue]
-    memory_bench: Annotated[MemoryBenchSettings, Field(MemoryBenchSettings())]  # pyright: ignore[reportCallIssue]
 
     @model_validator(mode="before")
     @classmethod

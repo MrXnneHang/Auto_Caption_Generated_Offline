@@ -51,7 +51,6 @@ class XnneHangLabSettings(BaseModel):
     package: PackagesSettings
     root: RootAbsDir
     server: ServerSettings
-    memory_bench: MemoryBenchSettings
 ```
 
 这里的重点不是“字段多”，而是每个子模块都拥有自己的独立模型。这样 UI、服务端、Agent 初始化都能按模块读取，不需要到处手写键名。
@@ -148,7 +147,6 @@ local_embedding = false
 gsv_lite = false
 genie_tts = true
 qwen_tts = false
-memory_bench = false
 to_do_list = true
 yutto_uiya = true
 ```

@@ -22,7 +22,7 @@ BUILTIN_PLUGIN_IDS = [
     "web_fetch",
     "screen_shot",
     "diary",
-    "memory",
+    "wikimem",
     "live2d_control",
 ]
 
@@ -60,7 +60,7 @@ def test_builtin_plugins_define_config_schema() -> None:
 
 def test_plugin_loader_validates_profile_overrides() -> None:
     with pytest.raises(ValidationError):
-        asyncio.run(PluginLoader().load("memory", profile_overrides={"search_limit": 0}))
+        asyncio.run(PluginLoader().load("wikimem", profile_overrides={"search_limit": 0}))
 
 
 def test_live2d_control_schema_exposes_list_of_objects() -> None:

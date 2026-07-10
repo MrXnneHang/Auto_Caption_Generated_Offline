@@ -17,7 +17,7 @@
 - 断句 → 表情/动作提取 → TTS 过滤 → 显示处理
 - 维护 `MemoryStore`（对话消息列表 + 本地历史持久化）
 
-> `MemoryStore` 只管对话消息列表与本地历史，不负责 mem0 记忆的读写。mem0 的读写由 `MemoryPlugin`（hook 插件）承担，两者职责不同。
+> 这里的 `MemoryStore` 只管对话消息列表与本地历史，不负责长期记忆的读写。长期记忆由 `wikimem` 插件（hook 插件）承担，两者职责不同。
 
 ## 模块分层
 
@@ -107,9 +107,9 @@ MemoryAgent (agent.py)                ← 编排器
 
 ## 记忆读写
 
-mem0 记忆的读写不在 `MemoryAgent` 里，而在 `MemoryPlugin`（hook 插件）里：
+长期记忆的读写不在 `MemoryAgent` 里，而在 `wikimem` 插件（hook 插件）里：
 
-- **读**：`on_before_turn` → POST `/memory/search`，结果注入本轮 `memory_context`
-- **写**：`on_after_turn` → POST `/memory/add`，fire-and-forget，写入 mem0 + 触发 graph pipeline
+- **读**：`on_before_turn` → wikimem `MemoryIndex.retrieve()`（内存 BM25 + 可选 embedding 融合 + 一跳 wiki-link 展开），结果注入本轮 `memory_context`
+- **写**：`on_after_turn` → 后台任务里单次抽取 LLM 调用 → 写入 workspace 下的 markdown 分类文件
 
-`agent_id` 来自 Profile 的 `[plugins.memory] agent_id`，这是记忆归属的唯一来源。elaina 和 congyin 各写各的，但共存于同一个 Neo4j 图中。
+记忆目录来自 Profile 的 `[plugins.wikimem] memory_dir`（默认 `memory/`）。各 profile 默认共享同一目录；需要各写各的时配不同目录即可。

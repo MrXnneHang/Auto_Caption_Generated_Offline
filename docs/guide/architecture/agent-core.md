@@ -130,4 +130,4 @@ ConversationStorage (Protocol)
 | 输出方式 | token 流 → 断句 → TTS / Live2D | token 流收集完 → JSONResponse |
 | tool 标签 | TTS 过滤，不读出 | 混入回复，前端处理 |
 
-两条链路共用同一套 AgentCore 逻辑，差异完全由 Profile 封装。`[plugins.memory] agent_id` 决定记忆的读写归属——baoqiao 读写 baoqiao 的记忆，congyin 读写 congyin 的记忆，两者共存于同一个 Neo4j 图中，互不干扰。
+两条链路共用同一套 AgentCore 逻辑，差异完全由 Profile 封装。长期记忆由 `wikimem` 插件承担：`[plugins.wikimem] memory_dir` 决定记忆目录（默认 workspace 下 `memory/`，各 profile 共享；需要隔离时给不同 profile 配不同目录）。

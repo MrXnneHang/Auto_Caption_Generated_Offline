@@ -119,7 +119,7 @@ async def lifespan(app: FastAPI):
         None.
 
     Raises:
-        ValueError: memory_bench 或 `/memory/chat` 缺少关键配置时抛出。
+        ValueError: `/memory/chat` 缺少关键配置时抛出。
     """
     if lab_settings.asr.asr_model_provider == "sherpa":
         from lab.api.logic.sherpa_asr import load_sherpa_asr
@@ -204,107 +204,50 @@ async def lifespan(app: FastAPI):
             logger.warning("If you do not need tool calling, you can ignore this warning or disable `enable_tool`.")
             logger.warning("Application startup will continue, but tool calling is disabled for this run.")
 
-    if lab_settings.package.memory_bench:
+    # /memory/chat 是 lab 自有的 profile 驱动聊天端点（与已移除的 memory_bench 后端无关），
+    # 配置了 memory_chat_profile 即启用。
+    if lab_settings.agent.memory_chat_profile:
         try:
-            started = time.perf_counter()
-            logger.info("⏳ 初始化 memory_bench 后端...")
-            from memory_bench.server.router import state as memory_state  # type: ignore[reportMissingImports]
-            from memory_bench.server.startup import (  # type: ignore[reportMissingImports]
-                init_router_state,
-                load_memory_bench_env,
-                resolve_memory_bench_config,
-            )
+            chat_started = time.perf_counter()
+            logger.info("⏳ 初始化 /memory/chat 端点...")
+            from lab.agent.agent_factory import AgentFactory
+            from lab.agent.storage import HistoryStorageAdapter
+            from lab.api.routes.chat import chat_state
+            from lab.history_storage.store import HistoryStorage
 
-            memory_bench_cfg = lab_settings.memory_bench
             chat_model_cfg = lab_settings.agent.chat_model
-            chat_llm = lab_settings.agent.llm.get_provider_config(chat_model_cfg.llm_provider)
-            embedding_base_url = f"http://localhost:{lab_settings.server.port}/v1"
+            ws_root = Path(lab_settings.root.root_dir)
+            chat_state.chat_model = chat_model_cfg.llm_model_name
+            chat_state.workspace_root = str(ws_root)
+            chat_state.history_storage_dir = str(ws_root / "data" / "conversations")
 
-            missing: list[str] = []
-            if not chat_llm.llm_api_key:
-                missing.append(f"agent.llm.{chat_model_cfg.llm_provider}.llm_api_key")
-            if not lab_settings.package.local_embedding:
-                missing.append("package.local_embedding")
-            if missing:
-                raise ValueError(f"memory_bench startup is missing required config: {', '.join(missing)}")
+            chat_profile_path_str = lab_settings.agent.memory_chat_profile
+            chat_profile_path = Path(chat_profile_path_str)
+            if not chat_profile_path.is_absolute():
+                chat_profile_path = ws_root / chat_profile_path_str
+            if not chat_profile_path.exists():
+                raise FileNotFoundError(f"memory_chat_profile not found: {chat_profile_path}")
 
-            overrides: dict[str, object] = {
-                "chat_api_key": chat_llm.llm_api_key,
-                "chat_base_url": chat_llm.llm_base_url,
-                "chat_model": chat_model_cfg.llm_model_name,
-                "llm_api_key": chat_llm.llm_api_key,
-                "llm_base_url": chat_llm.llm_base_url,
-                "llm_model": chat_model_cfg.llm_model_name,
-                "chat_extra_body": None,
-                "llm_extra_body": None,
-                "claim_extra_body": None,
-                "embedding_api_key": "no-key",
-                "embedding_base_url": embedding_base_url,
-                "embedding_model": "bge-m3",
-                "search_limit": memory_bench_cfg.search_limit,
-                "server_api_key": memory_bench_cfg.server_api_key or None,
-            }
-
-            load_memory_bench_env()
-            cfg = resolve_memory_bench_config(overrides=overrides)
-            init_router_state(memory_state, cfg)
-            logger.info(
-                "✅ memory_bench 后端初始化完成 ({:.1f}s, upstream={} / {})",
-                time.perf_counter() - started,
-                cfg["chat_base_url"],
-                cfg["chat_model"],
+            chat_store = HistoryStorage(base_dir=chat_state.history_storage_dir)
+            chat_state.agent_core = await AgentFactory.create_core_with_profile(
+                lab_setting=lab_settings,
+                profile_path=chat_profile_path,
+                storage=HistoryStorageAdapter(
+                    chat_store,
+                    condense_after_turns=lab_settings.agent.structured_history_full_turns,
+                ),
+                workspace_root=ws_root,
+                packages=lab_settings.package.to_dict(),
             )
-
-            try:
-                chat_started = time.perf_counter()
-                logger.info("⏳ 初始化 /memory/chat 端点...")
-                from lab.agent.agent_factory import AgentFactory
-                from lab.agent.storage import HistoryStorageAdapter
-                from lab.api.routes.chat import chat_state
-                from lab.history_storage.store import HistoryStorage
-
-                ws_root = Path(lab_settings.root.root_dir)
-                chat_state.chat_model = chat_model_cfg.llm_model_name
-                chat_state.workspace_root = str(ws_root)
-                chat_state.history_storage_dir = str(ws_root / "data" / "conversations")
-
-                chat_profile_path_str = lab_settings.agent.memory_chat_profile
-                if not chat_profile_path_str:
-                    raise ValueError(
-                        'lab_settings.agent.memory_chat_profile is not configured; set it under [agent], for example "profiles/xxx.toml"'
-                    )
-
-                chat_profile_path = Path(chat_profile_path_str)
-                if not chat_profile_path.is_absolute():
-                    chat_profile_path = ws_root / chat_profile_path_str
-                if not chat_profile_path.exists():
-                    raise FileNotFoundError(f"memory_chat_profile not found: {chat_profile_path}")
-
-                chat_store = HistoryStorage(base_dir=chat_state.history_storage_dir)
-                chat_state.agent_core = await AgentFactory.create_core_with_profile(
-                    lab_setting=lab_settings,
-                    profile_path=chat_profile_path,
-                    storage=HistoryStorageAdapter(
-                        chat_store,
-                        condense_after_turns=lab_settings.agent.structured_history_full_turns,
-                    ),
-                    workspace_root=ws_root,
-                    packages=lab_settings.package.to_dict(),
-                )
-                logger.info(
-                    "✅ /memory/chat 端点初始化完成 ({:.1f}s, profile={})",
-                    time.perf_counter() - chat_started,
-                    chat_profile_path_str,
-                )
-            except ValueError:
-                raise
-            except Exception as chat_exc:
-                logger.warning("Chat endpoint init failed: {}", chat_exc)
-
+            logger.info(
+                "✅ /memory/chat 端点初始化完成 ({:.1f}s, profile={})",
+                time.perf_counter() - chat_started,
+                chat_profile_path_str,
+            )
         except ValueError:
             raise
-        except Exception as exc:
-            logger.warning("memory_bench backend init failed: {} ; backend routes will be unavailable", exc)
+        except Exception as chat_exc:
+            logger.warning("Chat endpoint init failed: {}", chat_exc)
 
     yield
 
@@ -415,14 +358,7 @@ class WebSocketServer:
                 "gsv-lite route",
                 lambda: self.app.include_router(import_module("lab.api.routes.gsv_lite").router),
             )
-        if lab_settings.package.memory_bench:
-            _include_router_with_log(
-                "memory_bench 路由",
-                lambda: self.app.include_router(
-                    import_module("memory_bench.server.router").router,
-                    prefix="/memory",
-                ),
-            )
+        if lab_settings.agent.memory_chat_profile:
             _include_router_with_log(
                 "/memory/chat 路由",
                 lambda: self.app.include_router(
