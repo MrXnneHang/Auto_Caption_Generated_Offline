@@ -1,7 +1,7 @@
 # ADR-0001: LLM Mode 记忆系统 — categories + wiki-links 取代 Neo4j 语义节点
 
 - **状态**：Accepted
-- **日期**：2026-07-08，修订 2026-07-10（PR #477 评审：检索去 LLM 化、零基础设施约束；二次修订：撤销双模开关，收敛为单管线 + embedding 渐进增强；三次修订：磁盘无不可读真相——索引不落盘，SQLite 移出设计，补可观测性）
+- **日期**：2026-07-08，修订 2026-07-10（PR #477 评审：检索去 LLM 化、零基础设施约束；二次修订：撤销双模开关，收敛为单管线 + embedding 渐进增强；三次修订：磁盘无不可读真相——索引不落盘，SQLite 移出设计，补可观测性；四次修订：向量不进物理内存——memmap + 量化分层，VectorIndex 可插拔端口（借鉴 mem0），vectors.json 作废改 .npy）
 - **关联**：[#471](https://github.com/XnneHangLab/XnneHangLab/issues/471) / [#468](https://github.com/XnneHangLab/XnneHangLab/issues/468)（设计来源）、[#470](https://github.com/XnneHangLab/XnneHangLab/issues/470) / [#469](https://github.com/XnneHangLab/XnneHangLab/issues/469)（后续：Multi-Character 记忆）、[ADR-0002](./0002-memu-design-not-dependency)
 
 ## 背景
@@ -48,7 +48,7 @@ memory_bench 的 Neo4j 图目前有 10 种节点类型，但只支撑可视化�
 | 场景 | 排序信号 | 相对纯 BM25 的额外成本 |
 |---|---|---|
 | 无 embedding 模型（默认 / 兜底） | BM25 关键词（中文需分词） | 无 |
-| 配置了 embedding 端点 | BM25 分 + 余弦分各自 min-max 归一后融合 | 写入时每批条目 1 次 embedding 调用、查询时 1 次；向量存单个 JSON 缓存文件（item 内容哈希为键，删除即自动重建），暴力余弦，无新增服务 |
+| 配置了 embedding 端点 | BM25 分 + 余弦分各自 min-max 归一后融合 | 写入时每批条目 1 次 embedding 调用、查询时 1 次；向量存本地 memmap 缓存，规模分层见"存储形态与可观测性"节，无新增服务 |
 
 查询 → 检索 L2 条目 → 命中条目机械展开 wiki-links（一跳）→ 按 token 预算裁剪注入。
 
@@ -64,9 +64,21 @@ memory_bench 的 Neo4j 图目前有 10 种节点类型，但只支撑可视化�
 |---|---|---|
 | `memory/<category>.md` | **唯一事实源** | 人可读、可编辑、可 diff；用户想改记忆就改文件 |
 | `journal.jsonl` | 操作日志（append-only） | 每次 memorize/合并/修复一行：时间戳、source_conv、category、item-name、动作。`tail -f` 即实时视图，"记忆发生了什么"的完整答案 |
-| `vectors.json`（仅启用 `[embed]` 时存在） | 派生缓存 | 内容哈希为键；删除即重建，永不包含独有信息 |
+| `vectors.npy` + `vectors.keys.jsonl`（仅启用 `[embed]` 时存在） | **持久**派生缓存 | memmap 按需分页，从不整体载入 RAM；keys.jsonl 明文记录 item-name + 内容哈希（可读性由它承担，.npy 只是数字矩阵）；删除仍可重建，但重建要重调 embedding 端点（有 API 成本），故增量更新而非启动即弃 |
 
-**索引不落盘**：BM25 索引在启动时扫描 markdown 在内存构建。数千条目量级（个人记忆库）就是几 MB 文本，重建成本可忽略；若未来到十万条量级，才允许引入磁盘缓存作为优化——仍必须满足硬约束 3（可删、可重建、非真相）。SQLite 从设计中移除。
+**索引不落盘**：BM25 索引在启动时扫描 markdown 在内存构建。数千条目量级（个人记忆库）就是几 MB 文本，重建成本可忽略；若未来到十万条量级，才允许引入磁盘缓存作为优化——仍必须满足硬约束 3（可删、可重建、非真相）。SQLite 从设计中移除（BM25 不需要它）。
+
+**向量不进物理内存（四次修订，PR #477 评审）**：embedding 与 BM25 索引的约束不同——全精度向量既不能常驻 RAM（100 万条 ×768 维 float32 ≈ 3 GB），也不能用 JSON 承载（文本编码体积 ×3 且必须整体 parse）。默认实现按规模分层，全部零服务、零 docker：
+
+| 条目规模 | 候选生成 | 常驻 RAM（768 维） | 查询延迟（估，基准实测为准） |
+|---|---|---|---|
+| ≤ 1 万 | float32 memmap 全量暴力余弦（numpy） | ≈0（OS 页缓存管理热数据） | 数 ms ~ 几十 ms |
+| 1 万 ~ 100 万 | 二值量化签名（1 bit/维）常驻内存 Hamming 粗排 → top-K×4 从 memmap 取全精度重排 | 96 B/条：10 万 ≈ 10 MB，100 万 ≈ 96 MB | < 100 ms |
+| 超出 / 特殊需求 | `VectorIndex` 端口接可插拔后端（sqlite-vec、Qdrant local 等，extras 可选） | 由后端决定 | 由后端决定 |
+
+- **端口抽象借鉴 mem0**（其 VectorStore 接口 + 默认本地实现的形态）：抄接口，不抄默认值——重后端永远是宿主的选择，不是包的依赖（与 ADR-0002 同一原则在向量层的应用）。
+- 二值量化 + 全精度重排是 Qdrant/mem0 生态的同款技术；召回损失（粗排过采样倍数）由 memory_bench probe 实测定，不拍脑袋。
+- numpy 归入 `[embed]` extra——纯 Python 余弦在千条以上不可接受（PR #477 评论区已修正）。
 
 **看见检索**：`retrieve(..., explain=True)` 返回打分明细（BM25 分 / 余弦分 / 融合分、wiki-link 展开了哪些条目、token 预算裁掉了什么），适配层可直接落日志。
 
