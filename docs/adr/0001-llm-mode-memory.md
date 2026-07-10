@@ -1,7 +1,7 @@
 # ADR-0001: LLM Mode 记忆系统 — categories + wiki-links 取代 Neo4j 语义节点
 
 - **状态**：Accepted
-- **日期**：2026-07-08，修订 2026-07-10（PR #477 评审：检索去 LLM 化、零基础设施约束）
+- **日期**：2026-07-08，修订 2026-07-10（PR #477 评审：检索去 LLM 化、零基础设施约束；二次修订：撤销双模开关，收敛为单管线 + embedding 渐进增强）
 - **关联**：[#471](https://github.com/XnneHangLab/XnneHangLab/issues/471) / [#468](https://github.com/XnneHangLab/XnneHangLab/issues/468)（设计来源）、[#470](https://github.com/XnneHangLab/XnneHangLab/issues/470) / [#469](https://github.com/XnneHangLab/XnneHangLab/issues/469)（后续：Multi-Character 记忆）、[ADR-0002](./0002-memu-design-not-dependency)
 
 ## 背景
@@ -32,7 +32,9 @@ memory_bench 的 Neo4j 图目前有 10 种节点类型，但只支撑可视化�
 1. **Categories** 取代 Domain / Topic / Scene / Predicate 节点，如 `daily_life`、`preferences`、`personality`、`reading`。
 2. **Wiki-links** 以 `[[category:item-name]]` 格式直接写在条目内容里。检索命中条目后**机械展开**链接（按名字精确查找，默认一跳）拉取关联条目——不走 LLM，不建图存储。
 3. **Metadata** 承载结构信息（owner / source_conv / timestamp），不再需要图节点表达。
-4. **独立开关**：LLM Mode 与 RAG Mode 各自独立启停，常态下同一时间只跑一种模式。
+4. **单一管线，不做双模开关**：LLM Mode 是唯一的运行时记忆管线；embedding 是管线内按能力启用的**可选增强项**（见"检索"节），不构成第二个模式。mem0 + Qdrant + Neo4j 一套（旧称 RAG Mode）退回 memory_bench 的本职——**基准对照**，迁移期保留为回退后端。
+
+> 修订说明：#471 原文的"LLM Mode / RAG Mode 独立开关"在 2026-07-10 评审中被撤销。理由：简化后的 LLM Mode 检索（BM25 + 可选 embedding 融合）与"RAG"的分界线不在检索算法，而在**记忆表示**——把它们做成两条并行运行时管线只会重复建设。默认 LLM Mode，有 embedding 就在管线内用上，没有就纯文本检索。
 
 ### 写入（memorize）——每轮至多 1 次 LLM 调用，异步
 
@@ -40,13 +42,22 @@ memory_bench 的 Neo4j 图目前有 10 种节点类型，但只支撑可视化�
 
 ### 检索（retrieve）——0 次 LLM 调用，同步但 fail-open
 
-查询 → BM25 关键词检索 L2 条目（无 embedding 依赖）→ 命中条目机械展开 wiki-links（一跳）→ 按 token 预算裁剪注入。配置了 embedding 端点时，可选融合余弦相似度做混合排序（memU ADR-0007 的 hybrid 方案），但这是增强而非前提。
+同一条管线，按能力渐进增强，无模式切换：
+
+| 场景 | 排序信号 | 相对纯 BM25 的额外成本 |
+|---|---|---|
+| 无 embedding 模型（默认 / 兜底） | BM25 关键词（中文需分词） | 无 |
+| 配置了 embedding 端点 | BM25 分 + 余弦分各自 min-max 归一后融合 | 写入时每批条目 1 次 embedding 调用、查询时 1 次；向量存 SQLite/JSON，暴力余弦，无新增服务 |
+
+查询 → 检索 L2 条目 → 命中条目机械展开 wiki-links（一跳）→ 按 token 预算裁剪注入。
+
+**embedding 换来什么**：中文同义/改写的语义召回（"想去海边" vs "喜欢海"）——BM25 分词后仍是词面匹配。个人记忆库规模小（数千条目量级），BM25 + 良好的 item 命名可能已经够用；是否默认启用 embedding 融合，由 memory_bench probe 语料的命中率对比决定（M2 先纯 BM25 上线，融合作为 M3 可测量的可选项）。收益大于复杂度**只在"融合项"形态下成立**——一旦做成第二条管线就不成立。
 
 ### 与 Neo4j 的关系
 
 - 结构节点（Agent / Character / User / Conversation）**保留**，继续用于可视化
 - 语义节点由 categories 接管，实时管线停止生成语义节点
-- RAG Mode 未来独立演进（embedding + graph traversal），不受本决策影响
+- mem0 / Neo4j 基准线退回 memory_bench 基准对照定位；embedding + graph traversal 若未来复活，以基准数据立项为研究线，不是运行时并行模式
 
 ## 理由
 
@@ -73,4 +84,4 @@ memory_bench 的 Neo4j 图目前有 10 种节点类型，但只支撑可视化�
 
 **实施**
 
-按里程碑拆分为独立 issue（挂在 [#471](https://github.com/XnneHangLab/XnneHangLab/issues/471) 下）：存储层 → wiki-link 检索 → 插件双模开关 → Neo4j 语义节点退役。
+按里程碑拆分为独立 issue（挂在 [#471](https://github.com/XnneHangLab/XnneHangLab/issues/471) 下）：存储层 → wiki-link 检索 → 插件接入（默认 LLM Mode + embedding 可选融合 + mem0 迁移回退）→ Neo4j 语义节点退役。

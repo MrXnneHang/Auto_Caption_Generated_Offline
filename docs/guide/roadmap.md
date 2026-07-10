@@ -16,13 +16,13 @@ XnneHangLab 项目的开发路线图与技术债务清理计划。（更新于 2
 |---|---|---|---|
 | M1 | 存储层 — categories + metadata + 扁平条目 | [#478](https://github.com/XnneHangLab/XnneHangLab/issues/478) | 待开工 |
 | M2 | 检索 — wiki-link `[[category:item]]` 解析与关联抓取 | [#479](https://github.com/XnneHangLab/XnneHangLab/issues/479) | 待开工 |
-| M3 | MemoryPlugin 双模开关 — LLM Mode / RAG Mode 独立启停 | [#480](https://github.com/XnneHangLab/XnneHangLab/issues/480) | 待开工 |
+| M3 | MemoryPlugin 接入 — 默认 LLM Mode，embedding 可选融合，mem0 迁移回退 | [#480](https://github.com/XnneHangLab/XnneHangLab/issues/480) | 待开工 |
 | M4 | Neo4j 语义节点退役 — 实时管线停产语义节点 | [#481](https://github.com/XnneHangLab/XnneHangLab/issues/481) | 待开工 |
 
 **后续方向：**
 
 - Multi-Character 记忆（[#470](https://github.com/XnneHangLab/XnneHangLab/issues/470) / [#469](https://github.com/XnneHangLab/XnneHangLab/issues/469)）— Agent 画像独立为 LLM Mode + User 模板继承
-- RAG Mode 独立演进 — embedding + graph traversal（远期，与 LLM Mode 并行的另一条线）
+- mem0 / Neo4j 基准线 — 退回 memory_bench 基准对照定位；embedding + graph traversal 作为研究线按基准数据立项（远期，非运行时并行模式）
 
 ## TTS 统一调度
 
