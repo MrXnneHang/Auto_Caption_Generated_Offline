@@ -30,7 +30,7 @@ XnneHangLab 项目的开发路线图与技术债务清理计划。（更新于 2
 **后续方向：**
 
 - Multi-Character 记忆（[#470](https://github.com/XnneHangLab/XnneHangLab/issues/470) / [#469](https://github.com/XnneHangLab/XnneHangLab/issues/469)）— Agent 画像独立为记忆管线 category + User 模板继承
-- ~~mem0 / Neo4j 基准线~~ — 已随 memory_bench 移除；关联召回收益改由 wikimem `bench/link_probe.py` 支撑（展开 on/off 对比：+29pp @14 条 / +50pp @150 条）
+- ~~mem0 / Neo4j 基准线~~ — 已随 memory_bench 移除；wikimem `bench/link_probe.py`（构造语料）仅作回归探针，关联召回收益待真实场景数据佐证
 
 ## TTS 统一调度
 
