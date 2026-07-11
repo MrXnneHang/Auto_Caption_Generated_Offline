@@ -49,12 +49,12 @@ XnneHangLab 是支撑这两个实验的引擎——提供 Agent 框架、MCP 工
 
 你和 AI 聊了几个月，某天你问："我上次说过什么来着？"
 
-她不只是翻聊天记录——长期记忆由自研**记忆管线**（[wikimem](https://github.com/XnneHangLab/wikimem)，见 ADR-0001）承担：
+她不只是翻聊天记录——长期记忆由自研**记忆管线**（[wikimem](https://github.com/XnneHangLab/wikimem)，见 ADR-0001，[完整文档站](https://wikimem.xnnehang.top/zh/)）承担：
 
 | 特性 | 说明 |
 |------|------|
 | 📝 **markdown 是唯一事实源** | 每分类一个文件、每条记忆一个条目，人可读可改可 diff |
-| 🔗 **wiki-links 关联** | `[[category:item]]` 内联链接，检索命中后机械展开一跳（实测比纯 BM25 召回 +29~50pp） |
+| 🔗 **wiki-links 关联** | `[[category:item]]` 内联链接，检索命中后机械展开一跳，召回词面不重合的关联条目 |
 | 🔍 **零基础设施检索** | 内存 BM25 兜底，embedding 融合可选（`[embed]` extra），端点挂了自动回退 |
 | 🧬 **设计借鉴 memU** | categories + memory types 分类体系（见 ADR-0002，不引入依赖） |
 

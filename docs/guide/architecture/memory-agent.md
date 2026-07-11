@@ -113,3 +113,6 @@ MemoryAgent (agent.py)                ← 编排器
 - **写**：`on_after_turn` → 后台任务里单次抽取 LLM 调用 → 写入 workspace 下的 markdown 分类文件
 
 记忆目录来自 Profile 的 `[plugins.wikimem] memory_dir`（默认 `memory/`）。各 profile 默认共享同一目录；需要各写各的时配不同目录即可。
+
+wikimem 本体（存储格式 / 检索语义 / 向量 API / 宿主集成模式）见其独立文档站：
+[wikimem.xnnehang.top](https://wikimem.xnnehang.top/zh/)。
