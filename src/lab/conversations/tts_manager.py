@@ -950,7 +950,7 @@ class TTSTaskManager:
                     "[TTS_SEND] payload ready but waiting for earlier seq: ready_seq={} next_seq={} text={}",
                     sequence_number,
                     self._next_sequence_to_send,
-                    _summarize_text(payload.get("display_text", {}).get("text")),  # type: ignore[arg-type]
+                    _summarize_text(payload.get("display_text", {}).get("text")),
                 )
 
             while self._next_sequence_to_send in buffered_payloads:
@@ -960,7 +960,7 @@ class TTSTaskManager:
                     "[TTS_SEND] payload sent seq={} has_audio={} text={}",
                     self._next_sequence_to_send,
                     bool(next_payload.get("audio")),
-                    _summarize_text(display_text.get("text")),  # type: ignore[arg-type]
+                    _summarize_text(display_text.get("text")),
                 )
                 await websocket_send(json.dumps(next_payload))
                 self._next_sequence_to_send += 1

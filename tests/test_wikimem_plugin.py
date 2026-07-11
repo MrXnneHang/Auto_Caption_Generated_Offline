@@ -57,7 +57,7 @@ def _seed(tmp_path: Path) -> MemoryStore:
 
 def test_before_turn_injects_seeded_memory(tmp_path: Path) -> None:
     _seed(tmp_path)
-    plugin = WikimemPlugin(llm=FakeLLM("[]"))  # type: ignore[arg-type]
+    plugin = WikimemPlugin(llm=FakeLLM("[]"))
 
     async def _run() -> str | None:
         return await plugin.on_before_turn("想去海边玩", _ctx(tmp_path))
@@ -71,7 +71,7 @@ def test_before_turn_injects_seeded_memory(tmp_path: Path) -> None:
 
 
 def test_before_turn_fail_open(tmp_path: Path) -> None:
-    plugin = WikimemPlugin(memory_dir="\0invalid", llm=FakeLLM("[]"))  # type: ignore[arg-type]
+    plugin = WikimemPlugin(memory_dir="\0invalid", llm=FakeLLM("[]"))
 
     async def _run() -> str | None:
         return await plugin.on_before_turn("你好", _ctx(tmp_path))
@@ -86,7 +86,7 @@ def test_after_turn_memorizes_in_background(tmp_path: Path) -> None:
         '"content": "只喝手冲咖啡，不加糖。"}]\n```'
     )
     llm = FakeLLM(response)
-    plugin = WikimemPlugin(user_id="tester", llm=llm)  # type: ignore[arg-type]
+    plugin = WikimemPlugin(user_id="tester", llm=llm)
 
     async def _run() -> None:
         await plugin.on_after_turn("我只喝手冲咖啡", "记住啦", _ctx(tmp_path))
@@ -102,7 +102,7 @@ def test_after_turn_memorizes_in_background(tmp_path: Path) -> None:
 
 def test_after_turn_returns_before_llm_finishes(tmp_path: Path) -> None:
     llm = FakeLLM("[]", delay=0.5)
-    plugin = WikimemPlugin(llm=llm)  # type: ignore[arg-type]
+    plugin = WikimemPlugin(llm=llm)
 
     async def _run() -> float:
         started = time.perf_counter()
@@ -116,7 +116,7 @@ def test_after_turn_returns_before_llm_finishes(tmp_path: Path) -> None:
 
 
 def test_malformed_llm_output_is_skipped(tmp_path: Path) -> None:
-    plugin = WikimemPlugin(llm=FakeLLM("完全不是 JSON 的回答"))  # type: ignore[arg-type]
+    plugin = WikimemPlugin(llm=FakeLLM("完全不是 JSON 的回答"))
 
     async def _run() -> None:
         await plugin.on_after_turn("a", "b", _ctx(tmp_path))
@@ -131,7 +131,7 @@ def test_invalid_item_skipped_valid_kept(tmp_path: Path) -> None:
         '[{"category": "Bad Slug!", "name": "x", "content": "y"},'
         ' {"category": "notes", "name": "好条目", "content": "有效内容"}]'
     )
-    plugin = WikimemPlugin(llm=FakeLLM(response))  # type: ignore[arg-type]
+    plugin = WikimemPlugin(llm=FakeLLM(response))
 
     async def _run() -> None:
         await plugin.on_after_turn("a", "b", _ctx(tmp_path))
@@ -145,7 +145,7 @@ def test_invalid_item_skipped_valid_kept(tmp_path: Path) -> None:
 def test_prompt_carries_categories_and_related_items(tmp_path: Path) -> None:
     _seed(tmp_path)
     llm = FakeLLM("[]")
-    plugin = WikimemPlugin(llm=llm)  # type: ignore[arg-type]
+    plugin = WikimemPlugin(llm=llm)
 
     async def _run() -> None:
         await plugin.on_before_turn("想去海边玩", _ctx(tmp_path))

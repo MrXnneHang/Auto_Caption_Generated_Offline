@@ -27,7 +27,7 @@ class LLMTranslateClient(BaseClientInterface):
     def __init__(self):
         self.base_url = self.base_url + "/translate/llm"
 
-    def post(self, request: LLMTranslateRequest) -> LLMTranslateResponse | None:  # type: ignore[override]
+    def post(self, request: LLMTranslateRequest) -> LLMTranslateResponse | None:
         response = self.session.post(self.base_url, json=request.model_dump())
         response.raise_for_status()
         response_data = response.json()
@@ -38,7 +38,7 @@ class LLMTranslateClient(BaseClientInterface):
             logger.error("Failed to parse LLM translate response: {}, {}", exc, response_data)
             return None
 
-    async def asyncpost(self, request: LLMTranslateRequest) -> LLMTranslateResponse | None:  # type: ignore[override]
+    async def asyncpost(self, request: LLMTranslateRequest) -> LLMTranslateResponse | None:
         self.async_session = await self.get_async_session()
         async with self.async_session.post(self.base_url, json=request.model_dump()) as response:
             if response.status != 200:

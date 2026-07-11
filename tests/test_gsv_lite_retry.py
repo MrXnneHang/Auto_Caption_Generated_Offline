@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-# pyright: reportPrivateUsage=false
 import asyncio
 import sys
 from pathlib import Path
@@ -33,7 +32,7 @@ def test_repair_japanese_word2ph_balances_small_mismatch() -> None:
 
 def test_apply_gsv_lite_monkey_patch_repairs_japanese_g2p(monkeypatch: MonkeyPatch) -> None:
     class FakeJapaneseG2P:
-        def g2p(self, norm_text: str, with_prosody: bool = True):  # type: ignore[no-untyped-def]
+        def g2p(self, norm_text: str, with_prosody: bool = True):
             del norm_text, with_prosody
             return ["a", "b", "c"], {"word": ["x", "y"], "ph": [1, 1]}
 

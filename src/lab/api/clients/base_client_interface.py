@@ -36,20 +36,12 @@ class BaseClientInterface(ABC):
     session.headers.update({"Accept": "application/json"})
 
     @abstractmethod
-    def post(self, request: BaseRequest) -> dict[Any, Any] | None:
+    def post(self, *args: Any, **kwargs: Any) -> Any:
         """
-        Chat with the agent asynchronously.
+        Send a synchronous request to the server.
 
-        This function should be implemented by the agent.
-        Output type depends on the agent's output_type:
-        - SentenceOutput: For text-based responses with display and TTS text
-        - AudioOutput: For direct audio output with display text and transcript
-
-        Args:
-            input_data: BaseInput - User input data
-
-        Returns:
-            AsyncIterator[BaseOutput] - Stream of agent outputs
+        Each client defines its own request/response shape, so the interface
+        only fixes the method name (gradual signature keeps overrides valid).
         """
         logger.critical("BaseClient: No chat function set.")
         raise ValueError("BaseClient: No chat function set.")
@@ -61,9 +53,9 @@ class BaseClientInterface(ABC):
         return cls._async_session
 
     @abstractmethod
-    async def asyncpost(self, request: BaseRequest) -> dict[Any, Any] | None:
+    async def asyncpost(self, *args: Any, **kwargs: Any) -> Any:
         """
         Asynchronous wrapper for the post method.
         """
         logger.warning("BaseClient: asyncpost is not implemented, using post instead.")
-        return self.post(request)
+        return self.post(*args, **kwargs)

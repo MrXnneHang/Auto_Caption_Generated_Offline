@@ -193,7 +193,7 @@ class DisplayText:
 
     def to_dict(self) -> DisplayTextDict:
         """Convert to dictionary for JSON serialization"""
-        return DisplayTextDict(**asdict(self))
+        return DisplayTextDict(text=self.text, name=self.name, avatar=self.avatar)
 
     def __str__(self) -> str:
         """String representation for logging"""
@@ -216,7 +216,7 @@ class SentenceOutput(BaseOutput):
     tts_text: str  # Text for TTS
     actions: Actions
 
-    async def __aiter__(self):  # type: ignore[override]
+    async def __aiter__(self):
         """Yield the sentence pair and actions"""
         yield self.display_text, self.tts_text, self.actions
 
@@ -241,6 +241,6 @@ class AudioOutput(BaseOutput):
     transcript: str  # Original transcript
     actions: Actions
 
-    async def __aiter__(self):  # type: ignore[override]
+    async def __aiter__(self):
         """Iterate through audio segments and their actions"""
         yield self.audio_path, self.display_text, self.transcript, self.actions

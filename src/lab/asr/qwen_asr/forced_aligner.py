@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-# pyright: reportMissingTypeArgument=false, reportUnknownArgumentType=false, reportUnknownMemberType=false, reportUnknownParameterType=false, reportUnknownVariableType=false
 import subprocess
 import time
 import unicodedata
@@ -10,7 +9,7 @@ from threading import Lock
 from typing import Any, cast
 
 import numpy as np
-from loguru import logger  # pyright: ignore[reportMissingImports,reportUnknownVariableType]
+from loguru import logger
 
 logger = cast("Any", logger)
 

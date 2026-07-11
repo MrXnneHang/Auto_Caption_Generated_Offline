@@ -54,7 +54,7 @@ git checkout -b feat/your-feature
 
 # 5. 提交前检查（代码类 PR）
 just fmt      # 格式化 + import 排序
-just lint     # pyright 类型检查 + ruff lint
+just lint     # ty 类型检查（warning 也视为失败）+ ruff lint
 just test     # 运行测试
 
 # 5. 提交前检查（文档类 PR）
@@ -88,7 +88,7 @@ git push origin --delete feat/your-feature
 
 - **ruff check** — 代码风格 + import 排序
 - **ruff format --check** — 格式一致性
-- **pyright** — 静态类型检查
+- **ty check --error-on-warning** — 静态类型检查
 - **pytest** — 单元测试
 
 ## 给 Vibe Coder 的规则

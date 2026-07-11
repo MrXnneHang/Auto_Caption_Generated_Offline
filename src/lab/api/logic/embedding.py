@@ -21,7 +21,7 @@ DEFAULT_EMBEDDING_MODEL_NAME = "bge-m3"
 try:
     import llama_cpp
 except ImportError:
-    llama_cpp = None
+    llama_cpp = None  # ty: ignore[invalid-assignment]
 
 _embedding_model: EmbeddingModel | None = None
 _embedding_model_path: str | None = None

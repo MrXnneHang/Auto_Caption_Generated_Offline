@@ -201,7 +201,7 @@ def update_metadate(conf_uid: str, history_uid: str, metadata: dict[Any, Any]) -
                 "role": "metadata",
                 "timestamp": datetime.now().isoformat(timespec="seconds"),
             }
-            new_metadata.update(metadata)  # Add new fields # type: ignore
+            new_metadata.update(metadata)  # Add new fields
             history_data.insert(0, new_metadata)
 
         with filepath.open("w", encoding="utf-8") as f:
@@ -302,8 +302,8 @@ def get_history_list(conf_uid: str) -> list[dict[str, Any]]:
                 except Exception as e:
                     logger.error(f"Failed to remove empty history file {uid}: {e}")
 
-        histories.sort(key=lambda x: x["timestamp"] or "", reverse=True)  # type: ignore
-        return histories  # type: ignore
+        histories.sort(key=lambda x: x["timestamp"] or "", reverse=True)
+        return histories
 
     except Exception as e:
         logger.error(f"Error listing histories: {e}")

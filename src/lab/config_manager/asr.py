@@ -33,11 +33,11 @@ class ASRSettings(BaseModel):
     punctuation_list: Annotated[str, Field("，。；、？,.;?!")]
     sherpa: Annotated[
         SherpaASRSettings,
-        Field(default_factory=lambda: SherpaASRSettings()),  # pyright: ignore[reportCallIssue]
+        Field(default_factory=lambda: SherpaASRSettings()),  # ty: ignore[missing-argument]
     ]
     qwen_asr: Annotated[
         QwenASRSettings,
-        Field(default_factory=lambda: QwenASRSettings()),  # pyright: ignore[reportCallIssue]
+        Field(default_factory=lambda: QwenASRSettings()),  # ty: ignore[missing-argument]
     ]
     cut: Annotated[bool, Field(False)]
     cut_line: Annotated[int, Field(400, title="Sentence split gap (ms)")]

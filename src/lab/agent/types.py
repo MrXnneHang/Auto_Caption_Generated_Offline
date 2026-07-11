@@ -31,21 +31,21 @@ def _normalize_mapping(mapping: Mapping[object, object]) -> dict[str, JsonLike]:
 
 def dump_openai_msg(obj: object) -> dict[str, object]:
     if hasattr(obj, "model_dump"):
-        d = obj.model_dump(exclude_none=True)  # type: ignore[attr-defined]
-        return dict(d)  # type: ignore[arg-type]
+        d = cast("Any", obj).model_dump(exclude_none=True)
+        return dict(d)
     if hasattr(obj, "to_dict"):
-        d = obj.to_dict()  # type: ignore[attr-defined]
-        return dict(d)  # type: ignore[arg-type]
+        d = cast("Any", obj).to_dict()
+        return dict(d)
     raise TypeError(f"Unknown message type: {type(obj)}")
 
 
 def prompt_result_to_text(prompt_result: object) -> str:
-    msgs = getattr(prompt_result, "messages", None) or []  # type: ignore
+    msgs = getattr(prompt_result, "messages", None) or []
     lines: list[str] = []
-    for m in msgs:  # type: ignore
-        role = getattr(m, "role", "unknown")  # type: ignore
-        content = getattr(m, "content", "")  # type: ignore
-        text = getattr(content, "text", None)  # type: ignore
+    for m in msgs:
+        role = getattr(m, "role", "unknown")
+        content = getattr(m, "content", "")
+        text = getattr(content, "text", None)
         if text is None:
             text = str(content)
         lines.append(f"{role}: {text}")
@@ -271,8 +271,8 @@ class OpenAIMessage(BaseModel):
         if self.role == "tool":
             d["tool_call_id"] = self.tool_call_id
 
-        if self.role == "assistant" and getattr(self, "tool_calls", None):
-            d["tool_calls"] = [tc.model_dump(mode="json") for tc in self.tool_calls]  # type: ignore[attr-defined]
+        if self.role == "assistant" and self.tool_calls:
+            d["tool_calls"] = [tc.model_dump(mode="json") for tc in self.tool_calls]
 
         if self.role == "assistant" and self.reasoning_content:
             d["reasoning_content"] = self.reasoning_content

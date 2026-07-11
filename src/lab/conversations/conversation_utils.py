@@ -94,15 +94,19 @@ async def send_tool_call_event(
     char_name = "AI"
     if service_context and service_context.character_config:
         char_name = service_context.character_config.character_name
-    await websocket_send(json.dumps({
-        "type": "tool_call_status",
-        "tool_id": event.tool_id,
-        "tool_name": event.tool_name,
-        "name": char_name,
-        "status": event.status,
-        "content": event.result if event.result is not None else event.args,
-        "timestamp": datetime.now().isoformat(),
-    }))
+    await websocket_send(
+        json.dumps(
+            {
+                "type": "tool_call_status",
+                "tool_id": event.tool_id,
+                "tool_name": event.tool_name,
+                "name": char_name,
+                "status": event.status,
+                "content": event.result if event.result is not None else event.args,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
+    )
 
 
 async def handle_sentence_output(
@@ -209,7 +213,7 @@ async def process_user_input(
 
         try:
             # 将音频数据写入文件
-            sf.write(audio_file_path, user_input, samplerate=16000)  # 假设采样率为 16000 Hz # type: ignore
+            sf.write(audio_file_path, user_input, samplerate=16000)  # 假设采样率为 16000 Hz
             # 使用文件路径调用异步转录方法
             asr_client = ASRClient()
             response = await asr_client.asyncpost(ASRRequest(file_path=audio_file_path))
@@ -261,8 +265,8 @@ async def finalize_conversation_turn(
 
     await websocket_send(json.dumps({"type": "force-new-message"}))
 
-    if broadcast_ctx and broadcast_ctx.broadcast_func:  # type: ignore
-        await broadcast_ctx.broadcast_func(  # type: ignore
+    if broadcast_ctx and broadcast_ctx.broadcast_func:
+        await broadcast_ctx.broadcast_func(
             broadcast_ctx.group_members,  # type: ignore
             {"type": "force-new-message"},
             broadcast_ctx.current_client_uid,
@@ -289,7 +293,7 @@ async def send_conversation_end_signal(
 
     await websocket_send(json.dumps(chain_end_msg))
 
-    if broadcast_ctx and broadcast_ctx.broadcast_func and broadcast_ctx.group_members:  # type: ignore
+    if broadcast_ctx and broadcast_ctx.broadcast_func and broadcast_ctx.group_members:
         await broadcast_ctx.broadcast_func(  # type: ignore
             broadcast_ctx.group_members,
             chain_end_msg,

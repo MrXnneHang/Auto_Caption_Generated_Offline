@@ -116,7 +116,7 @@ class AsyncLLM:
             temp = self.temperature if temperature is None else temperature
 
             if stream_:
-                stream = await self.client.chat.completions.create(  # type: ignore[return-value]
+                stream = await self.client.chat.completions.create(
                     **self._build_request_kwargs(
                         messages=messages_with_system,
                         stream=True,
@@ -124,13 +124,13 @@ class AsyncLLM:
                     )
                 )
 
-                async for chunk in stream:  # type: ignore[return-value]
-                    delta = chunk.choices[0].delta  # type: ignore[attr-defined]
-                    if delta.content is None:  # type: ignore[union-attr]
-                        delta.content = ""  # type: ignore[assignment]
-                    yield delta.content  # type: ignore[misc]
+                async for chunk in stream:
+                    delta = chunk.choices[0].delta
+                    if delta.content is None:
+                        delta.content = ""
+                    yield delta.content
             else:
-                response = await self.client.chat.completions.create(  # type: ignore[return-value]
+                response = await self.client.chat.completions.create(
                     **self._build_request_kwargs(
                         messages=messages_with_system,
                         stream=False,
@@ -138,8 +138,8 @@ class AsyncLLM:
                     )
                 )
 
-                assistant_msg = response.choices[0].message  # type: ignore[attr-defined]
-                yield assistant_msg.content or ""  # type: ignore[misc]
+                assistant_msg = response.choices[0].message
+                yield assistant_msg.content or ""
 
         except APIConnectionError as e:
             logger.error(
@@ -160,7 +160,7 @@ class AsyncLLM:
         finally:
             if stream is not None:
                 try:
-                    await stream.close()  # type: ignore[union-attr]
+                    await stream.close()
                 except Exception:
                     pass
 
@@ -228,8 +228,8 @@ class AsyncLLM:
 
         resp = cast(
             "ChatCompletion",
-            await call_with_short_retry(  # type: ignore[assignment]
-                lambda: self.client.chat.completions.create(  # type: ignore[return-value]
+            await call_with_short_retry(
+                lambda: self.client.chat.completions.create(
                     **self._build_request_kwargs(
                         messages=messages_with_system,
                         stream=False,
@@ -239,4 +239,4 @@ class AsyncLLM:
                 max_retries=2,
             ),
         )
-        return (resp.choices[0].message.content or "").strip()  # type: ignore[misc]
+        return (resp.choices[0].message.content or "").strip()

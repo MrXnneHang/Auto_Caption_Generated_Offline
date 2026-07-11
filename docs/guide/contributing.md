@@ -96,7 +96,7 @@ git push origin feat/your-feature
 
 - `ruff check`
 - `ruff format --check`
-- `pyright`
+- `ty check --error-on-warning`
 - `pytest`
 
 ---

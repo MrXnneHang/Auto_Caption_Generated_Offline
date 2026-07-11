@@ -1,5 +1,3 @@
-# pyright: reportPrivateUsage=false, reportUnknownParameterType=false, reportMissingParameterType=false, reportUnknownMemberType=false, reportCallIssue=false, reportArgumentType=false
-
 from __future__ import annotations
 
 from pathlib import Path

@@ -7,7 +7,7 @@ from lab.config_manager.validators import validate_all, validate_startup
 
 
 def _base_settings(tmp_path: Path) -> XnneHangLabSettings:
-    settings = XnneHangLabSettings()  # pyright: ignore[reportCallIssue]
+    settings = XnneHangLabSettings()
     settings.root.root_dir = str(tmp_path)
     settings.agent.memory_agent_profile = ""
     settings.agent.memory_chat_profile = "profiles/congyin.toml"

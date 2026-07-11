@@ -45,7 +45,7 @@ def import_plugin_module(plugin_id: str, plugin_dir: Path) -> Any:
         if spec is None or spec.loader is None:
             raise
         module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)  # type: ignore[union-attr]
+        spec.loader.exec_module(module)
         return module
 
 

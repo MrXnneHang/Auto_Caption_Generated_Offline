@@ -248,7 +248,7 @@ def _empty_float32() -> Float32Array:
 
 def _to_wav_chunk(pcm: Float32Array, sample_rate: int) -> bytes:
     buf = io.BytesIO()
-    sf.write(buf, pcm, sample_rate, format="WAV", subtype="PCM_16")  # type: ignore[reportUnknownMemberType]
+    sf.write(buf, pcm, sample_rate, format="WAV", subtype="PCM_16")
     return buf.getvalue()
 
 

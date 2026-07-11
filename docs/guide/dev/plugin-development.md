@@ -215,7 +215,7 @@ asyncio.run(test())
 
 # 跑 lint
 uv run ruff check src/lab/plugins/get_time/
-uv run pyright src/lab/plugins/get_time/
+uv run ty check src/lab/plugins/get_time/
 ```
 
 ---

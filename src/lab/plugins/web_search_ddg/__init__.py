@@ -82,7 +82,7 @@ def _parse_ddg_html_results(html_text: str, max_results: int) -> list[WebSearchR
                 snippet = snippet_node.get_text(" ", strip=True) or None
 
         try:
-            items.append(WebSearchResultItem(title=title, url=href, snippet=snippet))  # type: ignore[arg-type]
+            items.append(WebSearchResultItem(title=title, url=href, snippet=snippet))
         except pydantic.ValidationError:
             continue
 

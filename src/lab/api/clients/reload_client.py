@@ -11,7 +11,7 @@ class ReloadClient(BaseClientInterface):
     def __init__(self, model_node: Literal["asr"]):
         self.base_url = self.base_url + f"/{model_node}/reload"
 
-    def post(self) -> None:  # type: ignore[override]
+    def post(self) -> None:
         response = self.session.post(self.base_url)
         response.raise_for_status()
         try:
@@ -20,7 +20,7 @@ class ReloadClient(BaseClientInterface):
             logger.error(f"Failed to parse Reload response: {e}, {response}")
             return None
 
-    async def asyncpost(self) -> None:  # type: ignore[override]
+    async def asyncpost(self) -> None:
         """
         Asynchronous wrapper for the post method.
         """

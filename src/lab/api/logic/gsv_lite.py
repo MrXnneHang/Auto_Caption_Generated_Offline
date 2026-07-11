@@ -335,8 +335,7 @@ def _normalize_gsv_lite_cached_dict(raw_dict: object) -> dict[str, list[list[str
                 typed_pron = cast("list[object]", raw_pron)
                 pronunciations.append([str(phone) for phone in typed_pron])
             elif isinstance(raw_pron, tuple):
-                typed_pron = cast("tuple[object, ...]", raw_pron)
-                pronunciations.append([str(phone) for phone in typed_pron])
+                pronunciations.append([str(phone) for phone in raw_pron])
 
         if pronunciations:
             normalized[str(raw_word).lower()] = pronunciations
@@ -484,8 +483,8 @@ def _apply_gsv_lite_monkey_patch() -> None:
     if _gsv_lite_monkey_patch_applied:
         return
 
-    from gsv_tts.GPT_SoVITS.G2P.Japanese.japanese import (  # pyright: ignore[reportMissingImports]
-        JapaneseG2P,  # pyright: ignore[reportUnknownVariableType]
+    from gsv_tts.GPT_SoVITS.G2P.Japanese.japanese import (
+        JapaneseG2P,
     )
 
     current_g2p = cast(
@@ -579,7 +578,7 @@ def load_gsv_lite_model(*, force_reload: bool = False) -> dict[str, Any]:
         _configure_gsv_lite_nltk(target_spec.models_dir)
 
         try:
-            from gsv_tts import TTS  # pyright: ignore[reportMissingImports,reportUnknownVariableType]
+            from gsv_tts import TTS
         except Exception as exc:  # pragma: no cover
             raise RuntimeError("gsv-tts-lite is not installed") from exc
         _apply_gsv_lite_monkey_patch()

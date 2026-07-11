@@ -1,5 +1,3 @@
-# pyright: reportMissingImports=false
-
 from __future__ import annotations
 
 import json
@@ -254,7 +252,7 @@ def main() -> None:
         v = os.environ.get("ASR_MODEL_PROVIDER", "").strip()
         if v not in ("none", "sherpa", "qwen"):
             raise ValueError(f"Invalid ASR_MODEL_PROVIDER={v!r}, must be one of: none, sherpa, qwen")
-        settings.asr.asr_model_provider = v  # type: ignore[assignment]
+        settings.asr.asr_model_provider = cast("Literal['none', 'sherpa', 'qwen']", v)
     if (value := _parse_bool_env("TTS_GSV_LITE_USE_BERT")) is not None:
         settings.agent.tts.gsv_lite.use_bert = value
     if "TTS_GENIE_TTS_LANGUAGE" in os.environ:

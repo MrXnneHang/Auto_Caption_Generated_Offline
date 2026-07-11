@@ -128,8 +128,8 @@ class LLMTranslateSetting(BaseModel):
 
 
 class TranslateSettings(BaseModel):
-    deeplx: Annotated[DeepLXTranslateSetting, Field(DeepLXTranslateSetting())]  # pyright: ignore[reportCallIssue]
-    llm: Annotated[LLMTranslateSetting, Field(LLMTranslateSetting())]  # pyright: ignore[reportCallIssue]
+    deeplx: Annotated[DeepLXTranslateSetting, Field(DeepLXTranslateSetting())]  # ty: ignore[missing-argument]
+    llm: Annotated[LLMTranslateSetting, Field(LLMTranslateSetting())]  # ty: ignore[missing-argument]
 
 
 class GSVLiteTTSSettings(BaseModel):
@@ -222,8 +222,8 @@ class TTSSettings(BaseModel):
             description="Root directory for engine-agnostic voice assets such as emotions/*.wav and speaker/*.wav.",
         ),
     ]
-    gsv_lite: Annotated[GSVLiteTTSSettings, Field(GSVLiteTTSSettings())]  # pyright: ignore[reportCallIssue]
-    genie_tts: Annotated[GenieTTSSettings, Field(GenieTTSSettings())]  # pyright: ignore[reportCallIssue]
+    gsv_lite: Annotated[GSVLiteTTSSettings, Field(GSVLiteTTSSettings())]  # ty: ignore[missing-argument]
+    genie_tts: Annotated[GenieTTSSettings, Field(GenieTTSSettings())]  # ty: ignore[missing-argument]
 
 
 class AgentSettings(BaseModel):
@@ -250,17 +250,17 @@ class AgentSettings(BaseModel):
 
         return raw
 
-    chat_model: Annotated[ChatModelSetting, Field(ChatModelSetting())]  # pyright: ignore[reportCallIssue]
-    vision_model: Annotated[VisionModelSetting, Field(VisionModelSetting())]  # pyright: ignore[reportCallIssue]
+    chat_model: Annotated[ChatModelSetting, Field(ChatModelSetting())]  # ty: ignore[missing-argument]
+    vision_model: Annotated[VisionModelSetting, Field(VisionModelSetting())]  # ty: ignore[missing-argument]
     enable_tool: Annotated[bool, Field(True, title="Enable Tool Calling (BuiltinTool)")]
-    prompts: Annotated[PromptSettings, Field(PromptSettings())]  # pyright: ignore[reportCallIssue]
-    llm: Annotated[LLMSettings, Field(LLMSettings())]  # pyright: ignore[reportCallIssue]
+    prompts: Annotated[PromptSettings, Field(PromptSettings())]  # ty: ignore[missing-argument]
+    llm: Annotated[LLMSettings, Field(LLMSettings())]  # ty: ignore[missing-argument]
     translate_provider: Annotated[TranslateProvider, Field("none", title="Translation Provider")]
-    translate: Annotated[TranslateSettings, Field(TranslateSettings())]  # pyright: ignore[reportCallIssue]
+    translate: Annotated[TranslateSettings, Field(TranslateSettings())]  # ty: ignore[missing-argument]
     user_lang: Annotated[Literal["ZH", "EN", "JA"], Field("ZH", title="User Language")]
     speaker_lang: Annotated[Literal["ZH", "EN", "JA"], Field("ZH", title="Speaker Language")]
-    tts: Annotated[TTSSettings, Field(TTSSettings())]  # pyright: ignore[reportCallIssue]
-    qwen_tts: Annotated[QwenTTSSettings, Field(QwenTTSSettings())]  # pyright: ignore[reportCallIssue]
+    tts: Annotated[TTSSettings, Field(TTSSettings())]  # ty: ignore[missing-argument]
+    qwen_tts: Annotated[QwenTTSSettings, Field(QwenTTSSettings())]  # ty: ignore[missing-argument]
     faster_first_response: Annotated[bool, Field(False, title="Faster First Response")]
     max_vision_concurrency: Annotated[
         int,

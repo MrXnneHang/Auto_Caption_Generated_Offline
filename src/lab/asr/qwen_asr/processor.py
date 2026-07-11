@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-# pyright: reportConstantRedefinition=false, reportMissingTypeArgument=false, reportUnknownArgumentType=false, reportUnknownMemberType=false, reportUnknownParameterType=false, reportUnknownVariableType=false
 import json
 from typing import TYPE_CHECKING, Any, cast
 

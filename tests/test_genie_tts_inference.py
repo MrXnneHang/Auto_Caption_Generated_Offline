@@ -28,15 +28,15 @@ def inference_module() -> Generator[ModuleType, None, None]:
         sys.modules[name] = module
 
     genie_pkg = ModuleType("genie_tts")
-    genie_pkg.__path__ = []  # type: ignore[attr-defined]
+    genie_pkg.__path__ = []
     _set_module("genie_tts", genie_pkg)
 
     core_pkg = ModuleType("genie_tts.Core")
-    core_pkg.__path__ = []  # type: ignore[attr-defined]
+    core_pkg.__path__ = []
     _set_module("genie_tts.Core", core_pkg)
 
     audio_pkg = ModuleType("genie_tts.Audio")
-    audio_pkg.__path__ = []  # type: ignore[attr-defined]
+    audio_pkg.__path__ = []
     _set_module("genie_tts.Audio", audio_pkg)
 
     onnxruntime_stub = ModuleType("onnxruntime")
@@ -44,7 +44,7 @@ def inference_module() -> Generator[ModuleType, None, None]:
     class InferenceSession:
         """Stub inference session."""
 
-    onnxruntime_stub.InferenceSession = InferenceSession  # type: ignore[attr-defined]
+    onnxruntime_stub.InferenceSession = InferenceSession
     _set_module("onnxruntime", onnxruntime_stub)
 
     ref_audio_stub = ModuleType("genie_tts.Audio.ReferenceAudio")
@@ -52,7 +52,7 @@ def inference_module() -> Generator[ModuleType, None, None]:
     class ReferenceAudio:
         """Stub reference audio."""
 
-    ref_audio_stub.ReferenceAudio = ReferenceAudio  # type: ignore[attr-defined]
+    ref_audio_stub.ReferenceAudio = ReferenceAudio
     _set_module("genie_tts.Audio.ReferenceAudio", ref_audio_stub)
 
     g2p_stub = ModuleType("genie_tts.GetPhonesAndBert")
@@ -62,7 +62,7 @@ def inference_module() -> Generator[ModuleType, None, None]:
     ) -> tuple[np.ndarray[Any, Any], np.ndarray[Any, Any]]:
         return np.array([[1]], dtype=np.int64), np.zeros((1, 1), dtype=np.float32)
 
-    g2p_stub.get_phones_and_bert = fake_get_phones_and_bert  # type: ignore[attr-defined]
+    g2p_stub.get_phones_and_bert = fake_get_phones_and_bert
     _set_module("genie_tts.GetPhonesAndBert", g2p_stub)
 
     spec = importlib.util.spec_from_file_location(module_name, inference_path)
@@ -79,7 +79,7 @@ def inference_module() -> Generator[ModuleType, None, None]:
             if previous is sentinel:
                 sys.modules.pop(name, None)
             else:
-                sys.modules[name] = previous  # type: ignore[assignment]
+                sys.modules[name] = previous
 
 
 def test_extract_generated_semantic_tokens_keeps_only_generated_suffix(inference_module: ModuleType) -> None:

@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-import aiohttp  # pyright: ignore[reportMissingImports]
+import aiohttp
 
 from lab.api.clients.base_client_interface import BaseClientInterface, BaseRequest, BaseResponse
 from lab.asr.converter import convert_asr_response_to_sentences
 from lab.asr.types import ASRResponse, Sentence
 from lab.config_manager import XnneHangLabSettings, load_settings_file
-from lab.logger.logger_group import logger  # pyright: ignore[reportAttributeAccessIssue,reportUnknownVariableType]
+from lab.logger.logger_group import logger
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -161,7 +161,7 @@ class ASRClient(BaseClientInterface):
 
         return f"{self.base_url}/asr/sherpa/transcribe"
 
-    def post(self, request: ASRRequest) -> list[Sentence] | None:  # type: ignore[override]
+    def post(self, request: ASRRequest) -> list[Sentence] | None:
         """调用 ASR 接口并转换为句子列表。
 
         Args:
@@ -216,7 +216,7 @@ class ASRClient(BaseClientInterface):
             _asr_logger.error(f"Failed to parse ASR response: {exc}, {payload}")
             return None
 
-    async def asyncpost(self, request: ASRRequest) -> ASRResponse | None:  # type: ignore[override]
+    async def asyncpost(self, request: ASRRequest) -> ASRResponse | None:
         """异步调用 ASR 接口。
 
         Args:
@@ -228,7 +228,7 @@ class ASRClient(BaseClientInterface):
         Raises:
             None.
         """
-        session = cast("Any", await self.get_async_session())  # pyright: ignore[reportUnknownMemberType]
+        session = cast("Any", await self.get_async_session())
         self.async_session = session
         if not request.file_path.exists():
             self.last_error = f"File not found: {request.file_path}"
@@ -240,7 +240,7 @@ class ASRClient(BaseClientInterface):
         try:
             base_url = self._resolve_base_url(request)
             with request.file_path.open("rb") as file:
-                form = cast("Any", aiohttp.FormData())  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                form = cast("Any", aiohttp.FormData())
                 form.add_field("file", file, filename=request.file_path.name)
                 async with session.post(base_url, data=form) as response:
                     if response.status != 200:

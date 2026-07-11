@@ -41,7 +41,7 @@ class GSVLiteClient(BaseClientInterface):
             "audio_byte": audio_bytes,
         }
 
-    def post(self, request: GSVLiteRequest) -> GSVLiteResponse | None:  # type: ignore[override]
+    def post(self, request: GSVLiteRequest) -> GSVLiteResponse | None:
         if request.ref_audio_path and not Path(request.ref_audio_path).exists():
             self.last_error = f"Reference audio file does not exist: {request.ref_audio_path}"
             logger.error(self.last_error)
@@ -68,7 +68,7 @@ class GSVLiteClient(BaseClientInterface):
             logger.error(self.last_error)
             return None
 
-    async def asyncpost(self, request: GSVLiteRequest) -> GSVLiteResponse | None:  # type: ignore[override]
+    async def asyncpost(self, request: GSVLiteRequest) -> GSVLiteResponse | None:
         if request.ref_audio_path and not Path(request.ref_audio_path).exists():
             self.last_error = f"Reference audio file does not exist: {request.ref_audio_path}"
             logger.error(self.last_error)

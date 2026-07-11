@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, TypedDict
 
 from loguru import logger
 from pydub import AudioSegment
-from pydub.utils import make_chunks  # type: ignore[import-untyped]
+from pydub.utils import make_chunks
 
 if TYPE_CHECKING:
     from lab.agent.output_types import Actions, ActionsDict, DisplayText, DisplayTextDict
@@ -34,7 +34,7 @@ def _get_volume_by_chunks(audio: AudioSegment, chunk_length_ms: int) -> list[flo
     Returns:
         list[float]: Normalized volumes for each chunk.
     """
-    chunks: list[AudioSegment] = make_chunks(audio, chunk_length_ms)  # type: ignore[call-arg]
+    chunks: list[AudioSegment] = make_chunks(audio, chunk_length_ms)
     volumes: list[float] = [chunk.rms for chunk in chunks]
     max_volume = max(volumes)
     if max_volume == 0:
@@ -82,12 +82,12 @@ def prepare_audio_payload(
         }
 
     try:
-        audio: AudioSegment | None = AudioSegment.from_file(audio_path)  # type: ignore[assignment]
+        audio: AudioSegment | None = AudioSegment.from_file(audio_path)
         if not isinstance(audio, AudioSegment):
-            raise TypeError(f"Expected audio to be AudioSegment, got {type(audio)}")  # type: ignore[unreachable]
-        audio_bytes: bytes = audio.export(format="wav").read()  # type: ignore[union-attr]
+            raise TypeError(f"Expected audio to be AudioSegment, got {type(audio)}")
+        audio_bytes: bytes = audio.export(format="wav").read()
         if not isinstance(audio_bytes, bytes):
-            raise TypeError(f"Expected audio_bytes to be bytes, got {type(audio_bytes)}")  # type: ignore[unreachable]
+            raise TypeError(f"Expected audio_bytes to be bytes, got {type(audio_bytes)}")
     except Exception as e:
         raise ValueError(f"Error loading or converting generated audio file to wav file '{audio_path}': {e}") from e
     audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")

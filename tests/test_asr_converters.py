@@ -13,7 +13,7 @@ def test_funasr_converter_split_sentence_on_gap_and_rewrite_text() -> None:
         "timestamp": [[0, 900], [900, 1999], [2700, 3500]],
     }
 
-    sentences = convert_asr_response_to_sentences(input_data)  # type: ignore[arg-type]
+    sentences = convert_asr_response_to_sentences(input_data)
 
     assert len(sentences) == 2
     assert sentences[0]["text"] == "\u4f60\u597d"
@@ -36,7 +36,7 @@ def test_funasr_converter_raises_on_mismatched_text_and_timestamps() -> None:
     }
 
     with pytest.raises(AssertionError):
-        convert_asr_response_to_sentences(input_data)  # type: ignore[arg-type]
+        convert_asr_response_to_sentences(input_data)
 
 
 def test_rewrite_sentence_text_by_words_spacing_rule() -> None:
@@ -49,7 +49,7 @@ def test_rewrite_sentence_text_by_words_spacing_rule() -> None:
         {"text": "\u56fd", "start": 5, "end": 6},
     ]
 
-    assert rewrite_sentence_text_by_words(words) == "\u4f60\u597d inspired by \u5fb7\u56fd"  # type: ignore[arg-type]
+    assert rewrite_sentence_text_by_words(words) == "\u4f60\u597d inspired by \u5fb7\u56fd"
 
 
 def test_qwen_parser_uses_native_timestamp_tags() -> None:
