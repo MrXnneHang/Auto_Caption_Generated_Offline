@@ -1,5 +1,3 @@
-# pyright: reportMissingImports=false, reportUnknownVariableType=false, reportUnknownMemberType=false
-
 from __future__ import annotations
 
 import asyncio

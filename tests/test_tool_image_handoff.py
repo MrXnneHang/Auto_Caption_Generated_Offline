@@ -452,7 +452,7 @@ def test_tool_image_is_sent_to_vision_summarizer_when_chat_lacks_vision(agent_ct
         )
 
     assert core.vision is not None
-    core.vision.summarize_tool_image = _summarize_tool_image  # type: ignore[method-assign]
+    core.vision.summarize_tool_image = _summarize_tool_image
 
     log_lines: list[str] = []
     sink_id = logger.add(lambda message: log_lines.append(str(message).strip()), format="{message}")

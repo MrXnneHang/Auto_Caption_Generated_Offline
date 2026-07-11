@@ -32,7 +32,7 @@ if not ROOT_DIR.exists():
 
 
 class AvatarStaticFiles(StaticFiles):
-    async def get_response(self, path: str, scope):  # type: ignore[override]
+    async def get_response(self, path: str, scope):
         """限制头像目录只允许访问图片资源。
 
         Args:

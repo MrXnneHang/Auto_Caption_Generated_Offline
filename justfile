@@ -133,7 +133,7 @@ fmt: # 似乎不会检查被 .gitignore 忽略的文件
   uv run ruff format . --exclude packages --exclude .git --exclude justfile --exclude models
 
 lint:
-  uv run pyright src/lab tests scripts
+  uv run ty check --error-on-warning
   uv run ruff check . --exclude packages --exclude .git --exclude justfile --exclude models
 
 fmt-docs:

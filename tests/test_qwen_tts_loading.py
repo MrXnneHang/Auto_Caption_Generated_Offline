@@ -1,5 +1,3 @@
-# pyright: reportPrivateUsage=false, reportUnknownArgumentType=false, reportUnknownMemberType=false
-
 from __future__ import annotations
 
 from types import SimpleNamespace

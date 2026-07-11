@@ -49,7 +49,7 @@ def _as_float32_mono_array(value: Any) -> Float32Array:
 
 def _decode_wav_b64_to_pcm(audio_b64: str) -> tuple[Float32Array, int]:
     wav_bytes = base64.b64decode(audio_b64)
-    audio_raw, sr_raw = sf.read(  # type: ignore[reportUnknownMemberType]
+    audio_raw, sr_raw = sf.read(
         io.BytesIO(wav_bytes),
         dtype="float32",
         always_2d=False,
@@ -202,7 +202,7 @@ def test_stream_save(
         raise RuntimeError("stream produced no audio chunks")
 
     merged = np.concatenate(pcm_parts)
-    sf.write(out_file, merged, final_sr or 24000, format="WAV", subtype="PCM_16")  # type: ignore[reportUnknownMemberType]
+    sf.write(out_file, merged, final_sr or 24000, format="WAV", subtype="PCM_16")
 
     elapsed = time.perf_counter() - start
     logger.info(f"stream-save saved => {out_file}")
@@ -383,7 +383,7 @@ def test_stream_play_and_save(
         raise RuntimeError("stream produced no audio chunks")
 
     merged = np.concatenate(pcm_parts)
-    sf.write(out_file, merged, final_sr or 24000, format="WAV", subtype="PCM_16")  # type: ignore[reportUnknownMemberType]
+    sf.write(out_file, merged, final_sr or 24000, format="WAV", subtype="PCM_16")
 
     elapsed = time.perf_counter() - start
     logger.info(f"stream-play-save saved => {out_file}")

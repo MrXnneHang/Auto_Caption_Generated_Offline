@@ -119,7 +119,7 @@ class CharacterSettings(BaseModel):
     character_name: Annotated[str, Field("")]
     avatar: Annotated[str, Field("")]
     human_name: Annotated[str, Field("Human")]
-    tts_preprocessor_config: Annotated[TTSPreprocessorConfig, Field(TTSPreprocessorConfig())]  # pyright: ignore[reportCallIssue]
+    tts_preprocessor_config: Annotated[TTSPreprocessorConfig, Field(TTSPreprocessorConfig())]  # ty: ignore[missing-argument]
     tts_config: Annotated[
         TTSConfig,
         Field(

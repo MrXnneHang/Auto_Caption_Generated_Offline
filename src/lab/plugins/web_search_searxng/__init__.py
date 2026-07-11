@@ -48,7 +48,7 @@ def _parse_searxng_html_results(html_text: str, base_url: str, max_results: int)
         if not href:
             continue
 
-        href = html.unescape(str(href))  # type: ignore[arg-type]
+        href = html.unescape(str(href))
         if href.startswith("//"):
             href = "https:" + href
         elif href.startswith("/"):
@@ -63,7 +63,7 @@ def _parse_searxng_html_results(html_text: str, base_url: str, max_results: int)
             snippet = snippet_node.get_text(" ", strip=True) or None
 
         try:
-            items.append(WebSearchResultItem(title=title, url=href, snippet=snippet))  # type: ignore[arg-type]
+            items.append(WebSearchResultItem(title=title, url=href, snippet=snippet))
         except pydantic.ValidationError:
             continue
 

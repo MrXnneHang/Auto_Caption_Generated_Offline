@@ -23,13 +23,15 @@ def timed_function(func: T) -> T:
     T: 一个包装后的函数，与原始函数具有相同的签名。
     """
 
+    func_name: str = getattr(func, "__name__", repr(func))
+
     @functools.wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:  # 显式使用 Any 处理参数和返回类型
         start_time: float = time.perf_counter()  # 添加类型注解 float
         result: Any = func(*args, **kwargs)  # 显式类型注解
         end_time: float = time.perf_counter()  # 添加类型注解 float
         total_time: float = end_time - start_time  # 计算总用时
-        Logger.info(f"函数 {func.__name__} 总用时: {total_time:.4f} 秒")  # 打印用时
+        Logger.info(f"函数 {func_name} 总用时: {total_time:.4f} 秒")  # 打印用时
         return result  # 返回结果
 
     return cast("T", wrapper)  # 使用 cast 确保类型兼容

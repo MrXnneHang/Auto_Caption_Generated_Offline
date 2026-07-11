@@ -131,7 +131,7 @@ Example: `:sparkles: feat: OCR 累积去重 — 归一化后精确匹配防止�
 
 ## Key Conventions
 
-- **Python 3.11**, `uv` for package management, `pyright` strict, `ruff` lint
+- **Python 3.11**, `uv` for package management, `ty` type check (warnings as errors), `ruff` lint
 - **Lazy imports**: heavy libraries (`torch`, `pandas`, etc.) must use lazy import to keep startup fast
 - **Config**: TOML-based — `config/lab.toml` (global), `profiles/*.toml` (per-character)
 - **Language**: UI text in Chinese, code/comments in English

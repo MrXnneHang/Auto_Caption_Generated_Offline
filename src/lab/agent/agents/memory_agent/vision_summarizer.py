@@ -139,7 +139,7 @@ class VisionSummarizer:
         ]
 
         try:
-            text_summary = await self.vision_llm.vision_completion_once(  # type: ignore[attr-defined]
+            text_summary = await self.vision_llm.vision_completion_once(
                 messages=msgs,
                 system=vision_system,
             )
@@ -322,7 +322,7 @@ class VisionSummarizer:
         ]
 
         try:
-            raw = await self.vision_llm.vision_completion_once(  # type: ignore[attr-defined]
+            raw = await self.vision_llm.vision_completion_once(
                 messages=msgs,
                 system=self.vision_system_prompt,
             )

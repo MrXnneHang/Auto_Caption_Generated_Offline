@@ -337,5 +337,5 @@ class AgentFactory:
 
             await original_close()
 
-        agent.close = _close_with_hooks
+        agent.close = _close_with_hooks  # ty: ignore[invalid-assignment]
         return agent

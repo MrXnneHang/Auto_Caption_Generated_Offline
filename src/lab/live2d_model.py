@@ -1,4 +1,3 @@
-# type: ignore[no-redef]
 # copyright@https://github.com/Open-LLM-VTuber/Open-LLM-VTuber
 
 from __future__ import annotations

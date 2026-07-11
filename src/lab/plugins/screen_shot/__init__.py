@@ -100,7 +100,7 @@ class ScreenShotPlugin(ToolPlugin):
 
     async def on_register(self, ctx: AgentContext) -> bool:
         try:
-            from PIL import ImageGrab  # type: ignore[attr-defined]
+            from PIL import ImageGrab
         except Exception as exc:
             logger.info("Skip ScreenShotPlugin registration because ImageGrab is unavailable: {}", exc)
             return False
@@ -118,7 +118,7 @@ class ScreenShotPlugin(ToolPlugin):
         scaling_factor = min(1280 / max(original_width, original_height), 1)
         if scaling_factor < 1:
             new_size = (math.ceil(original_width * scaling_factor), math.ceil(original_height * scaling_factor))
-            screenshot = screenshot.resize(new_size, Image.LANCZOS)  # type: ignore[attr-defined]
+            screenshot = screenshot.resize(new_size, Image.Resampling.LANCZOS)
 
         buffer = io.BytesIO()
         screenshot.save(buffer, "JPEG", quality=85)

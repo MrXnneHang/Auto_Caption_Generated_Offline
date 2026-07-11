@@ -146,11 +146,11 @@ def _extract_next_data_text(raw_html: str) -> str | None:
 
     def walk(value: Any) -> None:
         if isinstance(value, dict):
-            for item in value.values():  # type: ignore[union-attr]
+            for item in value.values():
                 walk(item)
             return
         if isinstance(value, list):
-            for item in value:  # type: ignore[union-attr]
+            for item in value:
                 walk(item)
             return
         if isinstance(value, str):
@@ -289,7 +289,7 @@ class WebFetchPlugin(ToolPlugin):
         )
         if not allowed:
             return WebFetchResult(
-                url=url,  # type: ignore[arg-type]
+                url=url,
                 status_code=451,
                 content_type="text/plain",
                 text="Blocked by robots.txt (respect_robots=true).",
@@ -329,7 +329,7 @@ class WebFetchPlugin(ToolPlugin):
             truncated = True
 
         return WebFetchResult(
-            url=url,  # type: ignore[arg-type]
+            url=url,
             status_code=response.status_code,
             content_type=content_type,
             text=text,

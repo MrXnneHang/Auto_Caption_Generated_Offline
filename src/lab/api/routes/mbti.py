@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter, Request
 from loguru import logger
+
+if TYPE_CHECKING:
+    from openai.types.chat import ChatCompletionMessageParam
 
 router = APIRouter(prefix="/mbti", tags=["mbti"])
 
@@ -85,7 +88,7 @@ async def run_test(request: Request) -> dict[str, Any]:
         llm_api_key=chat_llm_config.llm_api_key,
     )
 
-    messages: list[dict[str, str]] = []
+    messages: list[ChatCompletionMessageParam] = []
     if persona_text:
         messages.append({"role": "system", "content": persona_text})
     messages.append({"role": "user", "content": test_prompt})
@@ -94,7 +97,7 @@ async def run_test(request: Request) -> dict[str, Any]:
     try:
         response = await llm.client.chat.completions.create(
             model=llm.model,
-            messages=messages,  # type: ignore[arg-type]
+            messages=messages,
             temperature=0.7,
         )
         raw_content = response.choices[0].message.content or ""

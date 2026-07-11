@@ -242,8 +242,7 @@ class VisualObserverPlugin(HookPlugin):
                 # with little value. The accumulator reaches threshold (default 20)
                 # a few frames later, which doesn't affect trigger frequency.
                 filtered = {
-                    t for t in new_texts
-                    if not self._is_similar_to_assistant_reply(t, self._last_assistant_text)
+                    t for t in new_texts if not self._is_similar_to_assistant_reply(t, self._last_assistant_text)
                 }
                 if len(filtered) < len(new_texts):
                     plugin_logger.debug(
@@ -394,7 +393,7 @@ class VisualObserverPlugin(HookPlugin):
             wake = self._ctx.extra.get("_game_proactive_wake")
             if wake is not None:
                 assert callable(wake)
-                asyncio.create_task(wake())  # pyright: ignore[reportArgumentType]
+                asyncio.create_task(wake())
 
         self._clear_accumulated()
         self._active_threshold = self._diff_ocr_threshold

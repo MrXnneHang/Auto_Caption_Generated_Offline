@@ -30,7 +30,7 @@ def test_parse_single_summary_json_accepts_rich_schema_with_scene_and_summary() 
         ensure_ascii=False,
     )
 
-    parsed = VisionSummarizer._parse_single_summary_json(raw)  # pyright: ignore[reportPrivateUsage]
+    parsed = VisionSummarizer._parse_single_summary_json(raw)
 
     assert parsed == (raw, "编辑器与终端同屏")
 
@@ -39,7 +39,7 @@ def test_parse_single_summary_json_accepts_missing_summary() -> None:
     """验证缺少 summary 时仍可解析（新精简 prompt 不要求 summary 字段）。"""
     raw = json.dumps({"scene": "编辑器与终端同屏"}, ensure_ascii=False)
 
-    parsed = VisionSummarizer._parse_single_summary_json(raw)  # pyright: ignore[reportPrivateUsage]
+    parsed = VisionSummarizer._parse_single_summary_json(raw)
 
     assert parsed is not None
     assert parsed[1] == "编辑器与终端同屏"
@@ -55,7 +55,7 @@ def test_parse_single_summary_json_rejects_overlong_summary() -> None:
         ensure_ascii=False,
     )
 
-    parsed = VisionSummarizer._parse_single_summary_json(raw)  # pyright: ignore[reportPrivateUsage]
+    parsed = VisionSummarizer._parse_single_summary_json(raw)
 
     assert parsed is None
 
@@ -69,16 +69,16 @@ def test_parse_single_summary_json_strips_markdown_fence() -> None:
 
     # ```json ... ```
     wrapped = f"```json\n{inner}\n```"
-    parsed = VisionSummarizer._parse_single_summary_json(wrapped)  # pyright: ignore[reportPrivateUsage]
+    parsed = VisionSummarizer._parse_single_summary_json(wrapped)
     assert parsed is not None
     assert parsed[1] == "用户在浏览网页"
 
     # ```` (4 backticks)
     wrapped4 = f"````json\n{inner}\n````"
-    parsed4 = VisionSummarizer._parse_single_summary_json(wrapped4)  # pyright: ignore[reportPrivateUsage]
+    parsed4 = VisionSummarizer._parse_single_summary_json(wrapped4)
     assert parsed4 is not None
 
     # bare ``` without language tag
     bare = f"```\n{inner}\n```"
-    parsed_bare = VisionSummarizer._parse_single_summary_json(bare)  # pyright: ignore[reportPrivateUsage]
+    parsed_bare = VisionSummarizer._parse_single_summary_json(bare)
     assert parsed_bare is not None

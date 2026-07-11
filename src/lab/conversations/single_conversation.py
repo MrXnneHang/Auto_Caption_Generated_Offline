@@ -152,14 +152,14 @@ async def process_agent_response(
             agent_core.agent_context.extra["websocket_send"] = websocket_send
             agent_core.agent_context.extra["client_uid"] = client_uid
             agent_core.agent_context.extra["service_context"] = context
-        agent_output = context.agent_engine.chat(batch_input)  # type: ignore
+        agent_output = context.agent_engine.chat(batch_input)
         async for output in agent_output:  # type: ignore
             if isinstance(output, ToolCallEvent):
                 await send_tool_call_event(output, websocket_send, context)
                 continue
-            logger.debug(output)  # type: ignore
+            logger.debug(output)
             response_part = await process_agent_output(
-                output=output,  # type: ignore
+                output=output,
                 lab_settings=context.lab_setting,
                 character_config=context.character_config,
                 live2d_model=context.live2d_model,

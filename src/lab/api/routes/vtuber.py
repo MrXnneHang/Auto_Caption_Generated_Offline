@@ -33,7 +33,7 @@ def init_client_ws_route(default_context_cache: ServiceContext) -> ClientWebSock
     router.ws_handler = ws_handler
 
     @router.websocket("/client-ws")
-    async def websocket_endpoint(websocket: WebSocket):  # type: ignore[no-untyped-def]
+    async def websocket_endpoint(websocket: WebSocket):
         """WebSocket endpoint for client connections"""
         await websocket.accept()
         client_uid = str(uuid4())
@@ -56,12 +56,12 @@ file_default = File(...)
 
 
 @router.get("/web-tool")
-async def web_tool_redirect():  # type: ignore[no-untyped-def]
+async def web_tool_redirect():
     """Redirect /web-tool to /web_tool/index.html"""
     return Response(status_code=302, headers={"Location": "/web-tool/index.html"})
 
 
 @router.get("/web_tool")
-async def web_tool_redirect_alt():  # type: ignore[no-untyped-def]
+async def web_tool_redirect_alt():
     """Redirect /web_tool to /web_tool/index.html"""
     return Response(status_code=302, headers={"Location": "/web-tool/index.html"})

@@ -72,7 +72,7 @@ qwen-asr = [
 ]
 
 dev = [
-  "pyright>=1.1.391",
+  "ty>=0.0.1",
   "ruff>=0.9.3",
   "pytest>=8.3.4",
   "pytest-rerunfailures>=15.0",
@@ -177,14 +177,29 @@ qwen-asr = {  workspace = true }
 gsv-tts-lite = { workspace = true }
 wikimem = { workspace = true }
 
-[tool.pyright]
-include = ["src/lab","tests"]
-pythonVersion = "3.11"
-venvPath = "."
-venv = ".venv"
-extraPaths = ["src", "packages/wikimem/src"]
-typeCheckingMode = "strict"
-reportMissingTypeStubs = false
+[tool.ty.environment]
+python-version = "3.11"
+# Pin the platform CI checks (ubuntu) so `just lint` reports identical
+# diagnostics on Windows dev machines and in CI. win32-only branches
+# (guarded by `sys.platform == "win32"`) are skipped as unreachable.
+python-platform = "linux"
+# gsv-tts-lite uses a setuptools import-hook editable install ty cannot
+# follow, so its flat-layout sources are added as an explicit root.
+root = ["src", "packages/wikimem/src", "packages/GSV-TTS-Lite"]
+
+[tool.ty.src]
+include = ["src/lab", "tests", "scripts"]
+
+# Tests intentionally build pydantic Settings models with no args (defaults come
+# from Annotated Field metadata ty cannot see) and inject fakes / monkeypatches.
+[[tool.ty.overrides]]
+include = ["tests/**"]
+
+[tool.ty.overrides.rules]
+missing-argument = "ignore"
+invalid-argument-type = "ignore"
+unresolved-attribute = "ignore"
+invalid-assignment = "ignore"
 
 [tool.ruff]
 line-length = 120

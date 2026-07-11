@@ -66,7 +66,7 @@ class ContextEntry:
         Returns:
             ContextEntry 实例。
         """
-        return cls(full=d["full"], brief=d.get("brief"))  # type: ignore[arg-type]
+        return cls(full=d["full"] or "", brief=d.get("brief"))
 
 
 @dataclass

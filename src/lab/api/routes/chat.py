@@ -1,4 +1,3 @@
-# pyright: reportUnknownVariableType=none, reportUnknownMemberType=none, reportUnknownArgumentType=none, reportMissingTypeArgument=none
 """基于 AgentCore 的自主对话接口。"""
 
 from __future__ import annotations
@@ -8,10 +7,10 @@ import time
 import uuid
 from typing import TYPE_CHECKING
 
-from fastapi import APIRouter, HTTPException, Request  # type: ignore[reportMissingImports]
-from fastapi.responses import JSONResponse  # type: ignore[reportMissingImports]
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import JSONResponse
 from loguru import logger
-from pydantic import BaseModel  # type: ignore[reportMissingImports]
+from pydantic import BaseModel
 
 from lab.agent.output_types import ToolCallEvent
 from lab.history_storage.store import HistoryStorage

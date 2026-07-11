@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeGuard, cast
 
 from pydantic import Field, field_validator, model_validator
 
@@ -182,11 +182,11 @@ class StateConfig(PluginConfigModel):
 class StatesConfig(PluginConfigModel):
     listening: Annotated[
         StateConfig,
-        Field(default_factory=StateConfig, description="listening 状态配置。"),  # pyright: ignore[reportArgumentType]
+        Field(default_factory=StateConfig, description="listening 状态配置。"),
     ]
     speaking: Annotated[
         StateConfig,
-        Field(default_factory=StateConfig, description="speaking 状态配置。"),  # pyright: ignore[reportArgumentType]
+        Field(default_factory=StateConfig, description="speaking 状态配置。"),
     ]
 
 
@@ -252,7 +252,7 @@ class Live2DControlPluginConfig(PluginConfigModel):
     states: Annotated[
         StatesConfig,
         Field(
-            default_factory=StatesConfig,  # pyright: ignore[reportArgumentType]
+            default_factory=StatesConfig,
             description="按状态配置待机动作与 Pose Mixer 权重（推荐方式）。",
         ),
     ]
@@ -421,7 +421,7 @@ class Live2DControlPlugin(ToolPlugin):
         self._appearance_options: dict[str, AppearanceOption] = {}
 
         if self._states_has_clips(states):
-            self._idle_banks, self._mixer_weights_by_state = self._build_from_states(states)  # type: ignore[arg-type]
+            self._idle_banks, self._mixer_weights_by_state = self._build_from_states(states)
             for s in DEFAULT_IDLE_STATES:
                 self._mixer_weights_by_state.setdefault(s, dict(DEFAULT_MIXER_LAYER_WEIGHTS))
         else:
@@ -493,12 +493,14 @@ class Live2DControlPlugin(ToolPlugin):
         return idle_banks, mixer_weights
 
     @classmethod
-    def _states_has_clips(cls, states: StatesConfig | dict[str, Any] | None) -> bool:
+    def _states_has_clips(
+        cls, states: StatesConfig | dict[str, Any] | None
+    ) -> TypeGuard[StatesConfig | dict[str, Any]]:
         if states is None:
             return False
         if isinstance(states, StatesConfig):
             return bool(states.listening.clips or states.speaking.clips)
-        return any((v.get("clips") if isinstance(v, dict) else getattr(v, "clips", None)) for v in states.values())  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
+        return any((v.get("clips") if isinstance(v, dict) else getattr(v, "clips", None)) for v in states.values())
 
     @classmethod
     def _normalize_idle_clips(cls, raw_idle_clips: list[dict[str, Any]] | list[IdleClip]) -> dict[str, dict[str, Any]]:

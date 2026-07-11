@@ -30,7 +30,7 @@ class VADClient(BaseClientInterface):
     def __init__(self):
         self.base_url = self.base_url + "/audio/vad"
 
-    def post(self, request: VADRequest) -> VadResponse | None:  # type: ignore[override]
+    def post(self, request: VADRequest) -> VadResponse | None:
         """封装语音活动检测接口"""
         if not request.file_path.exists():
             logger.error(f"File not found: {request.file_path}")
@@ -44,7 +44,7 @@ class VADClient(BaseClientInterface):
                 logger.error(f"Failed to parse VAD response: {e}, {response}")
                 return None
 
-    async def asyncpost(self, request: VADRequest) -> VadResponse | None:  # type: ignore[override]
+    async def asyncpost(self, request: VADRequest) -> VadResponse | None:
         """封装语音活动检测接口的异步版本"""
         self.async_session = await self.get_async_session()
         if not request.file_path.exists():

@@ -43,7 +43,7 @@ class DeepLXClient(BaseClientInterface):
     def __init__(self):
         self.base_url = self.base_url + "/translate/deeplx"
 
-    def post(self, request: DeepLXRequest) -> DeepLXResponse | None:  # type: ignore[override]
+    def post(self, request: DeepLXRequest) -> DeepLXResponse | None:
         response = self.session.post(self.base_url, json=request.model_dump())
         response.raise_for_status()
         response = response.json()
@@ -54,7 +54,7 @@ class DeepLXClient(BaseClientInterface):
             logger.error(f"Failed to parse DeepLX response: {e}, {response}")
             return None
 
-    async def asyncpost(self, request: DeepLXRequest) -> DeepLXResponse | None:  # type: ignore[override]
+    async def asyncpost(self, request: DeepLXRequest) -> DeepLXResponse | None:
         """
         Asynchronous wrapper for the post method.
         """

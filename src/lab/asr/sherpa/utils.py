@@ -31,7 +31,7 @@ def import_sherpa_onnx() -> Any:
     """
     if os.name == "nt":
         try:
-            import onnxruntime as ort  # pyright: ignore[reportMissingImports]
+            import onnxruntime as ort
         except ImportError:
             ort = None
 
@@ -42,7 +42,7 @@ def import_sherpa_onnx() -> Any:
                 if capi_dir.exists():
                     os.add_dll_directory(str(capi_dir))
 
-    import sherpa_onnx  # pyright: ignore[reportMissingImports]
+    import sherpa_onnx
 
     return sherpa_onnx
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-# pyright: reportPrivateUsage=false
 from typing import TYPE_CHECKING, cast
 
 from lab.translate.engine import LLMTranslateEngine

@@ -125,6 +125,6 @@ class MemoryAgent(AgentInterface):
 
         return chat_with_memory
 
-    async def chat(self, input_data: BatchInput) -> AsyncIterator[SentenceOutput | AudioOutput | ToolCallEvent]:  # type: ignore[override]
+    async def chat(self, input_data: BatchInput) -> AsyncIterator[SentenceOutput | AudioOutput | ToolCallEvent]:  # ty: ignore[invalid-method-override]
         async for chunk in self._bound_chat(input_data):
             yield chunk

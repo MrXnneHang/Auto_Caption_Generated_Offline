@@ -1,4 +1,3 @@
-# pyright: reportMissingImports=false
 from __future__ import annotations
 
 import json
@@ -24,7 +23,7 @@ def _emit(event: str, target: str, status: str, message: str, current: int, tota
 class _MsStep:
     model_id: str
     local_dir: str
-    files: list[str] = field(default_factory=list)  # pyright: ignore[reportUnknownVariableType]
+    files: list[str] = field(default_factory=list)
 
 
 _TARGETS: dict[str, list[_MsStep]] = {
@@ -82,12 +81,12 @@ def _run_step(step: _MsStep, workspace_root: Path) -> None:
     local_dir.mkdir(parents=True, exist_ok=True)
 
     if step.files:
-        from modelscope.hub.file_download import model_file_download  # type: ignore[import]
+        from modelscope.hub.file_download import model_file_download
 
         for filename in step.files:
             model_file_download(model_id=step.model_id, file_path=filename, local_dir=str(local_dir))
     else:
-        from modelscope.hub.snapshot_download import snapshot_download  # type: ignore[import]
+        from modelscope.hub.snapshot_download import snapshot_download
 
         snapshot_download(model_id=step.model_id, local_dir=str(local_dir))
 

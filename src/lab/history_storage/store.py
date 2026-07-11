@@ -86,7 +86,7 @@ class HistoryStorage:
             self.log.error("Failed to read history %s: %s", date_id, exc)
             return []
 
-        messages: list[dict[str, str]] = data  # type: ignore[assignment]
+        messages: list[dict[str, str]] = data
         self.log.info("Loaded %d messages from %s", len(messages), date_id)
         return messages
 

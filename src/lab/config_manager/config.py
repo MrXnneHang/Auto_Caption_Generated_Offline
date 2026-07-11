@@ -105,12 +105,12 @@ class XnneHangLabSettings(BaseModel):
     """
 
     conf_version: Annotated[str, Field(CURRENT_CONF_VERSION, title="配置版本")]
-    asr: Annotated[ASRSettings, Field(ASRSettings())]  # pyright: ignore[reportCallIssue]
-    agent: Annotated[AgentSettings, Field(AgentSettings())]  # pyright: ignore[reportCallIssue]
-    local_embedding: Annotated[LocalEmbeddingSetting, Field(LocalEmbeddingSetting())]  # pyright: ignore[reportCallIssue]
-    package: Annotated[PackagesSettings, Field(PackagesSettings())]  # pyright: ignore[reportCallIssue]
-    root: Annotated[RootAbsDir, Field(RootAbsDir())]  # pyright: ignore[reportCallIssue]
-    server: Annotated[ServerSettings, Field(ServerSettings())]  # pyright: ignore[reportCallIssue]
+    asr: Annotated[ASRSettings, Field(ASRSettings())]  # ty: ignore[missing-argument]
+    agent: Annotated[AgentSettings, Field(AgentSettings())]  # ty: ignore[missing-argument]
+    local_embedding: Annotated[LocalEmbeddingSetting, Field(LocalEmbeddingSetting())]  # ty: ignore[missing-argument]
+    package: Annotated[PackagesSettings, Field(PackagesSettings())]  # ty: ignore[missing-argument]
+    root: Annotated[RootAbsDir, Field(RootAbsDir())]  # ty: ignore[missing-argument]
+    server: Annotated[ServerSettings, Field(ServerSettings())]  # ty: ignore[missing-argument]
 
     @model_validator(mode="before")
     @classmethod
@@ -193,7 +193,7 @@ def write_settings_file(
         settings_file.touch()
 
     with settings_file.open("w", encoding="utf-8") as file:
-        file.write(toml_dumps(settings.model_dump(exclude_none=True, by_alias=True)))  # type: ignore[arg-type]
+        file.write(toml_dumps(settings.model_dump(exclude_none=True, by_alias=True)))
 
 
 @overload

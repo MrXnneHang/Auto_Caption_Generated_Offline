@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 from typing import Any, cast
 
-from loguru import logger  # pyright: ignore[reportMissingImports,reportUnknownVariableType]
+from loguru import logger
 
 from lab.asr.sherpa.engine import (
     get_sherpa_asr,
@@ -56,7 +56,7 @@ def sherpa_asr_audio(input_path: Path) -> dict[str, Any]:
     start = time.perf_counter()
     response = get_sherpa_asr().transcribe(input_path)
     process_time = time.perf_counter() - start
-    logger.info(f"Sherpa-ASR inference completed in {process_time:.3f}s text={response['key']}")  # pyright: ignore[reportUnknownMemberType]
+    logger.info(f"Sherpa-ASR inference completed in {process_time:.3f}s text={response['key']}")
 
     return {
         "key": response["key"],

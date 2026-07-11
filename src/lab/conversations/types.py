@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 # Type definitions
 WebSocketSend = Callable[[str], Awaitable[None]]
-BroadcastFunc = Callable[[list[str], dict, str | None], Awaitable[None]]  # type: ignore
+BroadcastFunc = Callable[[list[str], dict, str | None], Awaitable[None]]
 
 
 class AudioPayload(TypedDict):
