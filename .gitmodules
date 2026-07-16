@@ -23,3 +23,6 @@
 [submodule "packages/wikimem"]
 	path = packages/wikimem
 	url = https://github.com/XnneHangLab/wikimem.git
+[submodule "packages/memU"]
+	path = packages/memU
+	url = https://github.com/XnneHangLab-Mirror/memU.git

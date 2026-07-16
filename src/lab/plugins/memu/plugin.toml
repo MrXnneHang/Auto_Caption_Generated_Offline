@@ -1,0 +1,81 @@
+[plugin]
+id = "memu"
+name = "memU Memory (CLI, experimental)"
+version = "0.2.0"
+type = "hook"
+description = "记忆管线（memU，实验性）：调用 memu-cli（从 packages/memU 子模块源码构建，Python 3.13 短生命周期子进程）。on_before_turn 用 `memu retrieve` 召回注入；on_after_turn 后台抽取（继承 chat LLM）写入本地影子 markdown 并 `memu commit`。全程 fail-open。与 wikimem 为并列可选后端（ADR-0003）。"
+author = "XnneHangLab"
+source = "builtin"
+
+[config]
+memory_dir = "memu_memory"
+search_limit = 5
+budget_tokens = 800
+python_version = "3.13"
+retrieve_timeout = 15.0
+commit_timeout = 600.0
+extraction_base_url = ""
+extraction_model = ""
+extraction_api_key = ""
+embedding_base_url = ""
+embedding_model = "text-embedding-3-small"
+embedding_api_key = ""
+
+[config_schema.memory_dir]
+type = "str"
+description = "memU 状态目录（相对 workspace_root，或绝对路径）：sqlite 库 + recall/ 影子记忆文件"
+
+[config_schema.search_limit]
+type = "int"
+description = "每轮召回的最大命中条数"
+min = 1
+max = 50
+
+[config_schema.budget_tokens]
+type = "int"
+description = "每轮注入记忆的 token 预算"
+min = 100
+max = 8000
+
+[config_schema.python_version]
+type = "str"
+description = "memu-cli 子进程使用的 Python 版本（上游要求 >=3.13），由 uv 解析"
+
+[config_schema.retrieve_timeout]
+type = "float"
+description = "召回（memu retrieve）超时秒数；超时即本轮不注入（fail-open）"
+min = 1.0
+max = 120.0
+
+[config_schema.commit_timeout]
+type = "float"
+description = "记忆写入（memu commit）超时秒数；首次调用包含 maturin 源码构建，需宽松"
+min = 30.0
+max = 1800.0
+
+[config_schema.extraction_base_url]
+type = "str"
+description = "抽取 LLM base_url；留空 = 继承 lab.toml chat 模型配置"
+
+[config_schema.extraction_model]
+type = "str"
+description = "抽取 LLM 模型名；留空 = 继承 lab.toml chat 模型配置"
+
+[config_schema.extraction_api_key]
+type = "str"
+description = "抽取 LLM API key；留空 = 继承 lab.toml chat 模型配置"
+
+[config_schema.embedding_base_url]
+type = "str"
+description = "memU 向量化 embedding 端点 base_url（OpenAI 兼容，必填；留空则插件禁用）"
+
+[config_schema.embedding_model]
+type = "str"
+description = "memU 向量化 embedding 模型名"
+
+[config_schema.embedding_api_key]
+type = "str"
+description = "memU 向量化 embedding API key"
+
+[type_config]
+entry = "MemuPlugin"

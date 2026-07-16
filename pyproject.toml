@@ -143,6 +143,11 @@ default-groups = ["base", "ocr", "qwen-asr", "dev", "llama-cpp", "tts_base", "gs
 
 [tool.uv.workspace]
 members = ["packages/Qwen3-ASR", "packages/GSV-TTS-Lite", "packages/wikimem"]
+# memU (memu-cli) requires Python 3.13 + a maturin/Rust core; this workspace is
+# pinned to 3.11. The `memu` plugin invokes its CLI out-of-process via
+# `uv run --no-project --with packages/memU`, so keep it out of the 3.11 resolution
+# entirely (ADR-0003).
+exclude = ["packages/memU"]
 
 [[tool.uv.index]]
 name = "pytorch-cu118"
