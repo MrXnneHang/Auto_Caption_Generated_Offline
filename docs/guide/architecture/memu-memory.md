@@ -9,14 +9,18 @@ memU 后端默认不启用，需要 **Rust 工具链**、可由 uv 解析的 **P
 [wikimem](https://wikimem.xnnehang.top/zh/)。
 :::
 
-## 上游形态（2026-07 pivot 之后）
+## 上游形态：两个集成面（memU ADR-0008）
 
-- 上游只发布/更新 **`memu-cli`**（`memu-py` 冻结待归档），CLI 是唯一受支持的集成面，
-  按**短生命周期进程**设计。
-- **memU 不做 LLM 抽取**：`memu commit` 持久化宿主准备好的 recall files（record seam）；
-  memory track 的文件**按行切 segment**（`#` 标题与空行跳过）——每行就是一条可检索记忆。
-- `memu retrieve` 是 0 LLM 的 embedding 检索，stdout 输出 JSON（inject seam）。
-- `memu-cli` 要求 Python 3.13 + maturin/Rust 编译核，本项目钉在 3.11，无法同进程导入。
+上游有**两个分层的集成面**，共享同一 store，可自由混用：
+
+- **Surface A —— zero-code hooks（`memu-cli`）**：面向 drop-in 用户；hook 契约 = `on_turn`
+  （回合后异步记录）+ `on_prompt`（生成前同步注入）。本项目当前接的就是这一面的语义。
+- **Surface B —— programmatic API（`memu-py`）**：面向把 memU 内嵌进自己 agent 的 builder，
+  代码里直接调 retrieve / memorize。`memu-py` 正在经历 trajectory-as-source **大重构，尚未
+  就绪**——就绪后本项目会**再接一条 PY 连接**（双面并存，不二选一），同样从子模块源码构建。
+- 当前 CLI 面：**memU 不做 LLM 抽取**——`memu commit` 持久化宿主准备好的 recall files
+  （memory track 按行切 segment，`#` 标题与空行跳过）；`memu retrieve` 是 0 LLM 的 embedding
+  检索，stdout 输出 JSON。要求 Python 3.13 + maturin/Rust，本项目（3.11）无法同进程导入。
 
 ## 架构
 
@@ -111,21 +115,30 @@ echo '{"recall_files": [{"name": "preferences", "track": "memory",
 uv run --isolated --no-project --python 3.13 --with ./packages/memU memu retrieve "咖啡偏好"
 ```
 
-retrieve 的 JSON 里应能看到 `segments[].text = "手冲咖啡：只喝手冲，不加糖"` 带相似度分数。
-首次运行会先做 maturin 构建（需要 Rust）。热路径实测约 **2.0 s/次**（Windows，本地假
-embedding，空库 retrieve；真实端点再加一次 embedding HTTP 往返）。
+retrieve 的 JSON 里应能看到 `segments[].text = "手冲咖啡：只喝手冲，不加糖"` 带相似度分数
+（本 round-trip 已在 pin `f51673e` 上验证通过）。首次运行会先做 maturin 构建（需要 Rust）。
+热路径实测 **2.1–2.4 s/次**（Windows，本地假 embedding；真实端点再加一次 embedding HTTP 往返）。
 
-::: danger 当前 pin（aae3d44）的上游回归
-上游 main 处于 pivot 中途：embedding client 返回 `(vectors, response)` 元组，而 agentic 面按
-裸列表消费——**该 pin 上 `commit` 与带数据的 `retrieve` 会报错**（空库 retrieve 正常）。插件
-fail-open，表现为不注入/不记忆。已上报上游
-[NevaMind-AI/memU#499](https://github.com/NevaMind-AI/memU/issues/499)；等上游修复、镜像同步后
-re-pin 即可，详见 [ADR-0003](/adr/0003-memu-cli-integration) 的「当前已知阻塞」。
+::: tip 曾有的上游回归（已解决）
+2026-07-16 集成时发现上游 embed 契约回归（[memU#499](https://github.com/NevaMind-AI/memU/issues/499)），
+上游当日以 [#504](https://github.com/NevaMind-AI/MemU/pull/504) 修复；re-pin 至 `f51673e` 后
+round-trip 已验证。这也是本集成「contributor dogfooding 回路」的首个产出。
 :::
+
+## re-pin 流程（升级子模块时）
+
+1. `git -C packages/memU fetch origin && git -C packages/memU checkout <新 commit>`，父仓 `git add packages/memU`
+2. **必须让 uv 重建**：uv 对路径源的缓存只看 `pyproject.toml` 的 mtime——版本号没变时 re-pin 会
+   **静默复用旧构建**（`--refresh-package` / `uv cache clean` 都不解）。插件已内置 fresh-build
+   guard 自动处理；**手动跑 CLI 时**需 `touch packages/memU/pyproject.toml`
+3. 跑上面的 keyless smoke 验证 commit → retrieve round-trip
 
 ## 已知代价
 
-- 每次召回付一次子进程成本（秒级，慢于 wikimem 的毫秒级）；不可接受时的逃生门（常驻
-  worker）在 [ADR-0003](/adr/0003-memu-cli-integration) 的「后果」里有记录，暂不实现。
+- 每次召回付一次子进程成本（实测 2.1–2.4 s，慢于 wikimem 的毫秒级）；根治路径是未来的
+  **memu-py（Surface B）连接**（见 [ADR-0003](/adr/0003-memu-cli-integration)），届时双面并存。
 - 首次启动有 Rust 构建延迟；构建期间召回不注入（fail-open）。
-- 承接 memu-cli 的 Beta 抖动风险（pivot 本身即例证）；缓解 = 子模块 pin + 最小 CLI 契约面。
+- **uv 路径源静默缓存坑**：re-pin 后版本号没变时 uv 会复用旧构建（见上方 re-pin 流程）；
+  插件已内置 guard，手动 CLI 需自己 touch。
+- 承接 memU 的 Beta 抖动：下一个**已宣告的破坏性变更**是 CLI 命令收敛（`memorize`/`retrieve`
+  成为唯一命令对，`commit`/`list-files` 退场，无弃用期），届时 re-pin 需同步适配插件。

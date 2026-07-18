@@ -1,9 +1,10 @@
 """记忆管线插件（memU CLI 后端，实验性）。
 
-上游 pivot（2026-07）：NevaMind-AI/MemU 现在只发布 `memu-cli`（`memu-py` 冻结待归档），
-且 CLI 是唯一受支持的集成面——上游明确按「短生命周期进程」设计（memu/env.py）。同时
-memU 不再自带 LLM 抽取：`memu commit` 只持久化宿主准备好的 recall files（record seam），
-`memu retrieve` 是 0 LLM 的 embedding 检索（inject seam）。
+memU 有两个分层集成面（上游 ADR-0008）：Surface A = zero-code hooks（`memu-cli`，短生命
+周期进程设计，memu/env.py）；Surface B = programmatic API（`memu-py`，trajectory-as-source
+大重构中，就绪后本项目将另接一条 PY 连接，双面并存——见本仓 ADR-0003）。本插件接的是
+CLI 面：memU 不自带 LLM 抽取，`memu commit` 只持久化宿主准备好的 recall files（record
+seam），`memu retrieve` 是 0 LLM 的 embedding 检索（inject seam）。
 
 因此本插件的形态是（ADR-0003）：
 
@@ -86,6 +87,26 @@ def _category_slug(category: str) -> str:
     return _CATEGORY_SLUG_RE.sub("-", category.strip().lower()).strip("-")
 
 
+def _submodule_commit(repo_root: Path) -> str | None:
+    """读 git plumbing 文件拿 packages/memU 当前 commit（不拉子进程）；解析不了返回 None。"""
+    gitfile = repo_root / "packages" / "memU" / ".git"
+    try:
+        if gitfile.is_dir():
+            gitdir = gitfile
+        else:
+            pointer = gitfile.read_text(encoding="utf-8").strip()
+            if not pointer.startswith("gitdir:"):
+                return None
+            gitdir = (gitfile.parent / pointer.removeprefix("gitdir:").strip()).resolve()
+        head = (gitdir / "HEAD").read_text(encoding="utf-8").strip()
+        if head.startswith("ref: "):
+            ref = gitdir / head.removeprefix("ref: ").strip()
+            return ref.read_text(encoding="utf-8").strip() if ref.exists() else None
+        return head or None
+    except OSError:
+        return None
+
+
 class MemuPlugin(HookPlugin):
     config_model = MemuPluginConfig
 
@@ -159,7 +180,30 @@ class MemuPlugin(HookPlugin):
         env["MEMU_BASE_URL"] = self._embedding_base_url
         env["MEMU_API_KEY"] = self._embedding_api_key or "no-key"
         env["MEMU_EMBED_MODEL"] = self._embedding_model or "text-embedding-3-small"
+        # 非 UTF-8 Windows 代码页下管道 stdout 会乱码（上游 memU#513 修复；本插件按 UTF-8 解码，
+        # 这里从宿主侧强制，任何 pin 都成立）
+        env["PYTHONIOENCODING"] = "utf-8"
         return env
+
+    def _ensure_fresh_build(self, ctx: AgentContext) -> None:
+        """re-pin 后强制 uv 重建（实测坑）：uv 对路径源的 cache key 只看 pyproject.toml
+        等构建文件的 mtime——子模块 re-pin 后若版本号没变、pyproject 字节未变（checkout
+        不碰它，mtime 不变），uv 会**静默复用旧构建**，`--refresh-package` 与
+        `uv cache clean <pkg>` 都无效。用 marker 记住上次见到的子模块 commit，变了就
+        touch pyproject 让 cache key 失效。marker 缺失时也 touch（多付一次构建，换确定性）。
+        """
+        commit = _submodule_commit(self._repo_root())
+        if not commit:
+            return
+        marker = self._data_dir(ctx) / ".memu-src-commit"
+        try:
+            if marker.exists() and marker.read_text(encoding="utf-8").strip() == commit:
+                return
+            os.utime(self._repo_root() / "packages" / "memU" / "pyproject.toml")
+            marker.parent.mkdir(parents=True, exist_ok=True)
+            marker.write_text(commit, encoding="utf-8")
+        except OSError as exc:
+            logger.warning("[memU] fresh-build guard skipped: {}", exc)
 
     async def _run_memu(
         self,
@@ -170,6 +214,7 @@ class MemuPlugin(HookPlugin):
         timeout: float,
     ) -> str:
         """跑一次 `memu <args>` 短生命周期子进程，返回 stdout；任何失败抛异常（由调用方 fail-open）。"""
+        self._ensure_fresh_build(ctx)
         submodule = self._repo_root() / "packages" / "memU"
         cmd = [
             "uv", "run", "--isolated", "--no-project", "--python", self._python_version,

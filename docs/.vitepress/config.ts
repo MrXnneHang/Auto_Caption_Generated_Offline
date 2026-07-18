@@ -30,7 +30,7 @@ export default defineConfig({
             { text: "ADR 索引", link: "/adr/" },
             { text: "0001 记忆管线（曾用名 LLM Mode）", link: "/adr/0001-llm-mode-memory" },
             { text: "0002 memU：借鉴设计而非引入依赖", link: "/adr/0002-memu-design-not-dependency" },
-            { text: "0003 memU CLI 集成", link: "/adr/0003-memu-cli-integration" },
+            { text: "0003 memU 双面集成（CLI 先行）", link: "/adr/0003-memu-cli-integration" },
           ],
         },
       ],

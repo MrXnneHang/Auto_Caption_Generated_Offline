@@ -12,7 +12,7 @@ import json
 import time
 from typing import TYPE_CHECKING, Any
 
-from lab.plugins.memu import MemuPlugin, _category_slug
+from lab.plugins.memu import MemuPlugin, _category_slug, _submodule_commit
 from lab.tools.types import AgentContext
 
 if TYPE_CHECKING:
@@ -196,3 +196,56 @@ def test_category_slug() -> None:
     assert _category_slug("Preferences") == "preferences"
     assert _category_slug("daily life!") == "daily-life"
     assert _category_slug("！！！") == ""
+
+
+def _fake_repo(tmp_path: Path, commit: str) -> Path:
+    """带 memU 子模块 git plumbing 的假仓库（detached HEAD 形态）。"""
+    repo = tmp_path / "repo"
+    gitdir = repo / ".git" / "modules" / "packages" / "memU"
+    gitdir.mkdir(parents=True)
+    (gitdir / "HEAD").write_text(commit + "\n", encoding="utf-8")
+    sub = repo / "packages" / "memU"
+    sub.mkdir(parents=True)
+    (sub / ".git").write_text("gitdir: ../../.git/modules/packages/memU\n", encoding="utf-8")
+    (sub / "pyproject.toml").write_text('name = "memu-cli"\n', encoding="utf-8")
+    return repo
+
+
+def test_submodule_commit_reads_git_plumbing(tmp_path: Path) -> None:
+    repo = _fake_repo(tmp_path, "f51673e6e80b23c570a7364b415bf61481956971")
+    assert _submodule_commit(repo) == "f51673e6e80b23c570a7364b415bf61481956971"
+    assert _submodule_commit(tmp_path / "nonexistent") is None
+
+
+def test_fresh_build_guard_touches_on_pin_change(tmp_path: Path) -> None:
+    # uv 路径源 cache key 只看 pyproject mtime：pin 变了必须 touch，否则静默用旧构建
+    repo = _fake_repo(tmp_path, "commit-aaa")
+    plugin, _ = _plugin(tmp_path)
+    plugin._repo_root = lambda: repo  # type: ignore[method-assign]
+    pyproject = repo / "packages" / "memU" / "pyproject.toml"
+    ctx = _ctx(tmp_path)
+
+    plugin._ensure_fresh_build(ctx)  # marker 缺失 → touch + 写 marker
+    marker = tmp_path / "memu_memory" / ".memu-src-commit"
+    assert marker.read_text(encoding="utf-8") == "commit-aaa"
+
+    baseline = pyproject.stat().st_mtime_ns
+    plugin._ensure_fresh_build(ctx)  # pin 未变 → 不 touch
+    assert pyproject.stat().st_mtime_ns == baseline
+
+    gitdir = repo / ".git" / "modules" / "packages" / "memU"
+    (gitdir / "HEAD").write_text("commit-bbb\n", encoding="utf-8")
+    plugin._ensure_fresh_build(ctx)  # pin 变了 → touch + marker 更新
+    assert pyproject.stat().st_mtime_ns > baseline
+    assert marker.read_text(encoding="utf-8") == "commit-bbb"
+
+
+def test_memu_env_isolates_store_and_forces_utf8(tmp_path: Path) -> None:
+    # record 与 inject 必须共用同一 store；且绝不串到用户全局 ~/.memu/config.env
+    plugin, _ = _plugin(tmp_path)
+    env = plugin._memu_env(_ctx(tmp_path))
+    data_dir = tmp_path / "memu_memory"
+    assert env["MEMU_DB"] == str(data_dir / "memu.sqlite3")
+    assert env["MEMU_CONFIG_ENV"] == str(data_dir / "config.env")
+    assert env["MEMU_BASE_URL"] == "http://127.0.0.1:9/v1"
+    assert env["PYTHONIOENCODING"] == "utf-8"  # 非 UTF-8 Windows 代码页下的管道乱码防护
