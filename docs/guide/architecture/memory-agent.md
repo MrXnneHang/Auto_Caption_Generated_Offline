@@ -116,3 +116,10 @@ MemoryAgent (agent.py)                ← 编排器
 
 wikimem 本体（存储格式 / 检索语义 / 向量 API / 宿主集成模式）见其独立文档站：
 [wikimem.xnnehang.top](https://wikimem.xnnehang.top/zh/)。
+
+::: tip 可选的第二记忆后端：memU
+除 wikimem 外，还有一个**实验性**的 `memu` hook 插件，走同样的 `on_before_turn` / `on_after_turn` 契约，但
+后端是 memU（`memu-cli`，Python 3.13 短生命周期子进程，从 `packages/memU` 子模块源码构建）。它与 wikimem
+并列、各自独立存储，可单独或同时启用做对照。见 [memU 记忆（CLI）](/guide/architecture/memu-memory) 与
+[ADR-0003](/adr/0003-memu-cli-integration)。
+:::

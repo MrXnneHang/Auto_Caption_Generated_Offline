@@ -1,8 +1,8 @@
 # ADR-0002: memU — 借鉴设计而非引入依赖
 
-- **状态**：Accepted（2026-07-10 按 PR #477 评审意见修订后采纳）
+- **状态**：Accepted（2026-07-10 按 PR #477 评审意见修订后采纳）；下方 fallback 已由 [ADR-0003](./0003-memu-cli-integration) 于 2026-07-16 激活
 - **日期**：2026-07-08，修订 2026-07-10
-- **关联**：[ADR-0001](./0001-llm-mode-memory)、[#471](https://github.com/XnneHangLab/XnneHangLab/issues/471)
+- **关联**：[ADR-0001](./0001-llm-mode-memory)、[ADR-0003](./0003-memu-cli-integration)、[#471](https://github.com/XnneHangLab/XnneHangLab/issues/471)
 
 ## 背景
 
@@ -25,9 +25,11 @@
 3. **单趟混合检索，检索不调 LLM**（memU ADR-0007 终态）：BM25 关键词为底、embedding 余弦为可选融合（min-max 归一）。memU 已放弃旧的 route_intention / sufficiency 多级 LLM 管线与图遍历——直接采用其终态，不重走弯路
 4. **集成时序 = hook 契约**（memU ADR-0008）：写入异步后台（`on_turn` ≈ 本项目 `HookPlugin.on_after_turn`）、注入同步临界路径 + token 预算 + fail-open（`on_prompt` ≈ `on_before_turn`）
 
-### Fallback（备选，暂不执行）
+### Fallback（备选，已于 2026-07-16 由 [ADR-0003](./0003-memu-cli-integration) 激活）
 
-若自研实现成本超出预期：uv sidecar 方案——`uv run --python 3.13 --with memu-py` 拉起独立进程，包一层 localhost FastAPI shim，固定 1.5.x 版本，SQLite 后端，embedding 指向用户自己的 LLM 供应商或本地 Ollama。代价：桌面应用多一个进程生命周期要管理，且承担 Beta API 升级风险。
+uv sidecar 方案——`uv run --python 3.13` 拉起独立进程，SQLite 后端，embedding 指向用户自己的 LLM 供应商或本地 Ollama。代价：桌面应用多一个进程生命周期要管理，且承担 Beta API 升级风险。
+
+> **2026-07-16 更新**：该 fallback 已落地为**实验性 opt-in** 的第二记忆后端（与 wikimem 并列，用于对照评测），但形态随上游 pivot 调整：上游收敛为 `memu-cli`（`memu-py` 冻结待归档）、CLI 即唯一契约面、按短生命周期进程设计——因此不是常驻 localhost shim，而是**每次调用拉起 `memu` CLI 短生命周期子进程**；memU 由 `packages/memU` 镜像**子模块源码构建**（不拉 PyPI wheel），贯彻「子模块 + 不 pip install」的供应链方针。详见 [ADR-0003](./0003-memu-cli-integration)。
 
 ## 理由
 
