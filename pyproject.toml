@@ -26,10 +26,10 @@ dependencies = [
 ]
 authors = [{ name = "MrXnneHang", email = "XnneHang@gmail.com" }]
 keywords = []
-license = { text = "MIT" }
+license = { text = "AGPL-3.0-or-later" }
 classifiers = [
   "Operating System :: OS Independent",
-  "License :: OSI Approved :: MIT License",
+  "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
   "Typing :: Typed",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
