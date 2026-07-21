@@ -35,12 +35,13 @@ wikimem 独立成库并即将新增日记原语与时间门控检索（见 wikim
 - 事件中的情绪以日记文本的形式进入记忆（经第 2 条的日记段落）。
 - 记法：**状态即时，情绪入事。**
 
-### 4. 记忆可视化主面板放 Launcher（Tauri），走应用自身路由
+### 4. 记忆可视化放 Launcher（Tauri）：每后端一个独立面板，走应用自身路由
 
-- **主面板在 Launcher（Tauri）**，与 `CharacterStatusPanel` 同构：Launcher 调用应用自己的 FastAPI 路由（`127.0.0.1:12393`）拿数据，提供翻阅、按时间检索、按内容搜索。翻阅式记忆可视化整体归 Launcher——它本就承载角色状态、profile、插件、console 等重面板，记忆面板与之为邻。
+- **在 Launcher（Tauri）**，与 `CharacterStatusPanel` 同构：Launcher 调用应用自己的 FastAPI 路由（`127.0.0.1:12393`）拿数据，提供翻阅、按时间检索、按内容搜索。翻阅式记忆可视化整体归 Launcher——它本就承载角色状态、profile、插件、console 等重面板，记忆面板与之为邻。
 - **Electron 前端只承载轻量运行时状态**：对话中实时展示的少量状态随聊天窗走（如本轮是否写入记忆、命中回显）；完整记忆可视化不进前端，前端保持在聊天关键路径上的轻量。
-- **记忆是插件，且不止一个后端**：记忆后端在应用里以插件形式存在（`wikimem` 插件；memU 为 ADR-0003 的第二后端），面板必须是**多后端**的——按后端切换或并列展示，不写死 wikimem；多后端具体怎么并置（分栏 / 切换 / 统一时间线）留给实现期设计。各后端数据路径不同：wikimem 进程内 import（毫秒级），memU 经 memu-cli 子进程（2.1–2.4 s/call），但都走应用自己的 FastAPI 路由，**不依赖 wikimem serve**（serve 面向进程外第三方消费者，wikimem ADR-0004）。
-- **面板是一等产品面，不是 demo**：尤其自研的 wikimem，可视化要做得精致（时间线、wiki-link 关系、命中高亮这类），不是"能跑就行"的占位。
+- **每个记忆后端一个独立面板，不合并**：记忆后端以插件形式存在（`wikimem` 插件；memU 为 ADR-0003 的第二后端），面板**随插件走、各自独立**——wikimem 一个、memU 一个，不揉进同一个统一面板。两套后端形态差异大（wikimem 是 markdown + wiki-link + BM25，memU 另有一套模型与存储），合成一个面板会让取数、渲染、状态互相纠缠，代码难读、易混、越加越复杂；拆开各自简单，日后加第三个后端也只是再加一个面板。
+- **数据路径 per 后端，均不依赖 wikimem serve**：wikimem 进程内 import（毫秒级），memU 经 memu-cli 子进程（2.1–2.4 s/call），但都走应用自己的 FastAPI 路由；serve 面向进程外第三方消费者（wikimem ADR-0004），不是宿主链路的一环。
+- **每个面板都是一等产品面，不是 demo**：尤其自研的 wikimem，可视化要做得精致（时间线、wiki-link 关系、命中高亮这类），不是"能跑就行"的占位。
 - UI 长什么样百分之百归应用；框架只保证数据可及。
 
 ### 5. 现状追认
@@ -56,7 +57,7 @@ extraction prompt、user_id、token 预算等策略参数继续留在插件侧�
   - **日记独立一次 LLM 调用**——每轮 2 次调用，违反 ADR-0001 硬约束 2；
   - **情绪状态进记忆框架**——每轮变化的状态会把 append-only 的事件流污染成高频可变存储，两头不像；
   - **记忆可视化塞进 Electron 前端**——前端是实时聊天面，塞进可翻阅/可搜索的重面板会拖累关键路径；Launcher 已有 `CharacterStatusPanel` 等同类重面板，记忆面板与之为邻更自然；
-  - **面板写死单一后端**——应用已是多记忆后端（wikimem + memU，ADR-0003），写死 wikimem 在接入 memU 时就得返工，面板从一开始按多后端设计；
+  - **多后端合成一个统一面板**——wikimem 与 memU 形态差异大，合一个面板会把两套取数/渲染/状态纠缠在一处，代码难读、易混、越加越复杂；改为每后端一个独立面板，随插件生长（同时也不写死单一后端）；
   - **前端走 wikimem serve**——宿主进程内已有 API，多一跳 HTTP 纯属绕路。
 
 ## 后果
@@ -65,13 +66,14 @@ extraction prompt、user_id、token 预算等策略参数继续留在插件侧�
 
 - wikimem 与应用的接缝收敛为：`retrieve(query, time_range)` 一个调用 + memorize 时的两类写入（wiki 条目 / 日记段落）。
 - 时间检索的正则部分零成本常开（快通道），LLM 成本只在模型判断需要时发生（tool call 按需触发）。
+- 记忆面板按后端拆分，各面板互不耦合、可独立演进，代码可读性优于统一面板；加后端 = 加面板，不动既有面板。
 
 **负面 / 代价**
 
 - 单次调用同时产出 wiki 条目 + 日记段落，结构化输出更复杂，解析失败面变大（以 fail-open + journal 留痕兜底）。
 - tool call 形态的意图识别依赖模型的工具调用质量，弱模型下"该开窗没开窗"会退化为普通语义检索（可接受：答不出 ≠ 答错）。
-- Launcher 记忆面板要同时适配多个记忆后端（wikimem / memU …），每个后端与面板之间各有薄适配层，需随各自 API 版本同步维护；加上"精致而非 demo"的产品级要求，成本高于一次性可视化。
+- 每个记忆后端一个独立面板，面板数量随后端增长；各自与自己后端的 API 有薄适配层，需随各自版本同步维护。共性 UI（时间线、搜索框、命中高亮）会在面板间重复，需抽公共组件避免各写各的；叠加"精致而非 demo"的产品级要求，总工作量高于一次性可视化。
 
 **实施**
 
-依赖 wikimem ADR-0001/0002 落地后：插件侧改造（extraction 结构化输出扩展、time_range tool 注册）→ 应用 FastAPI 可视化路由（多后端）→ Launcher 记忆面板（仿 `CharacterStatusPanel`，多后端可切换、产品级 UI）→ per-character 配置项。各挂独立 issue。
+依赖 wikimem ADR-0001/0002 落地后：插件侧改造（extraction 结构化输出扩展、time_range tool 注册）→ 各后端各自的 FastAPI 可视化路由 → Launcher 每后端一个独立面板（仿 `CharacterStatusPanel`，产品级 UI）→ per-character 配置项。各挂独立 issue。
