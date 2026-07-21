@@ -2,11 +2,11 @@
 
 - **状态**：Proposed（2026-07-21，随 PR 评审定稿）
 - **日期**：2026-07-21
-- **关联**：[ADR-0001](./0001-llm-mode-memory)（硬约束来源）、[ADR-0003](./0003-memu-cli-integration)、[wikimem ADR 0001–0004](https://github.com/XnneHangLab/wikimem/pull/13)（框架侧对应决策：日记原语、时间检索、向量缓存元数据、接口契约）
+- **关联**：[ADR-0001](./0001-llm-mode-memory)（硬约束来源）、[ADR-0003](./0003-memu-cli-integration)、[wikimem ADR 0001–0004](https://github.com/XnneHangLab/wikimem/pull/14)（框架侧对应决策：日记原语、时间检索、向量缓存元数据、接口契约）
 
 ## 背景
 
-wikimem 独立成库并即将新增日记原语与时间门控检索（见 wikimem [PR #13](https://github.com/XnneHangLab/wikimem/pull/13) 的 ADR-0001/0002）。随之浮现一批归属问题：时间意图识别放哪？日记由谁写、按什么策略写？情绪算不算记忆？记忆可视化前端走谁的接口？
+wikimem 独立成库并即将新增日记原语与时间门控检索（见 wikimem [PR #14](https://github.com/XnneHangLab/wikimem/pull/14) 的 ADR-0001/0002）。随之浮现一批归属问题：时间意图识别放哪？日记由谁写、按什么策略写？情绪算不算记忆？记忆可视化前端走谁的接口？
 
 [ADR-0001](./0001-llm-mode-memory) 的硬约束其实已经画了分界线的雏形："retrieve 0 次 LLM 调用；memorize 至多 1 次、异步、由宿主发起"。本 ADR 把这条线推广成总原则，并逐项裁定归属。
 
