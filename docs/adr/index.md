@@ -35,3 +35,4 @@ ADR（Architecture Decision Record）记录项目中**影响架构方向的决�
 | [0001](./0001-llm-mode-memory) | 记忆管线（曾用名 LLM Mode）— categories + wiki-links 取代 Neo4j 语义节点 | Accepted | 2026-07-08（修订 2026-07-10） |
 | [0002](./0002-memu-design-not-dependency) | memU — 借鉴设计而非引入依赖（fallback 于 0003 激活） | Accepted | 2026-07-08（修订 2026-07-16） |
 | [0003](./0003-memu-cli-integration) | memU 双面集成 — memu-cli 先行、memu-py 就绪后接入，作实验性第二记忆后端 | Accepted | 2026-07-16（修订 2026-07-18） |
+| [0004](./0004-memory-boundary) | 记忆职责边界 — 框架管确定性机制，应用管需要模型的判断 | Proposed | 2026-07-21 |
