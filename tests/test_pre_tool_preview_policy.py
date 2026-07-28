@@ -22,10 +22,15 @@ def test_pre_tool_preview_plugin_loads_as_policy() -> None:
 
 
 def test_preview_rule_is_not_scoped_to_the_first_tool_call() -> None:
-    """「本轮首次」易被理解成一个用户 turn 只预告一次，长 tool 链因此从第二步起失声。"""
+    """「本轮首次」易被理解成一个用户 turn 只预告一次，长 tool 链因此从第二步起失声。
+
+    这里禁掉整个「本轮」而不只是「本轮首次」：歧义出在「轮」这个单位上（用户 turn
+    还是一次 LLM call），换成「本轮每一次」之类的说法同样会把歧义带回来。要指代
+    单次 LLM call，请统一用「本次回复」。
+    """
     content = PreToolPreviewPlugin().get_prompt_segments()[0].content
 
-    assert "本轮首次" not in content
+    assert "本轮" not in content
     assert "每一次工具调用都成立" in content
 
 
@@ -56,7 +61,8 @@ def test_skip_clause_is_opt_out() -> None:
 
 def test_preview_segment_is_included_in_system_prompt(tmp_path: Path) -> None:
     tool_manager = ToolManager()
-    tool_manager.register_builtin(GetDatetimeTool())
+    datetime_tool = GetDatetimeTool()
+    tool_manager.register_builtin(datetime_tool)
     plugin = PreToolPreviewPlugin()
 
     prompt = SystemPromptBuilder(tmp_path).build(
@@ -70,4 +76,6 @@ def test_preview_segment_is_included_in_system_prompt(tmp_path: Path) -> None:
 
     assert "工具调用前预告" in prompt
     assert "每一次工具调用都成立" in prompt
-    assert "get_datetime" in prompt
+    # injection_position 决定 segment 插在工具清单前还是后，所以要确认注入没把清单挤掉。
+    # 取 tool 实例上的 name，避免内建工具改名时这里莫名其妙红。
+    assert datetime_tool.name in prompt
