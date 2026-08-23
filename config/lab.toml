@@ -1,4 +1,4 @@
-conf_version = "v1.6.5"
+conf_version = "v1.6.6"
 
 [asr]
 FFMPEG_PATH = "ffmpeg"
@@ -42,7 +42,7 @@ user_lang = "ZH"
 speaker_lang = "ZH"
 faster_first_response = false
 max_vision_concurrency = 4
-require_detailed = true
+require_detailed = false
 structured_history_full_turns = 5
 segment_method = "pysbd"
 interrupt_method = "user"
@@ -50,18 +50,23 @@ memory_agent_profile = "profiles/baoqiao.toml"
 memory_chat_profile = "profiles/congyin.toml"
 
 [agent.chat_model]
-llm_provider = ""
-llm_model_name = ""
-support_vision = false
-reasoning = true
+llm_provider = "deepseek"
+llm_model_name = "deepseek-v4-flash-vision-exp"
+support_vision = true
+thinking_mode = "disabled"
 
 [agent.vision_model]
 llm_provider = ""
 llm_model_name = ""
-reasoning = true
 
 [agent.prompts]
 vision_prompt = "./prompts/vision_prompt.txt"
+
+[[agent.llm.providers]]
+name = "deepseek"
+llm_api_key = ""
+llm_base_url = "https://api.deepseek.com"
+api_format = "chat_completion"
 
 [[agent.llm.providers]]
 name = "openai"

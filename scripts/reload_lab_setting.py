@@ -5,6 +5,12 @@ from lab.logger.logger_group import init_logger, logger
 
 DEFAULT_PROVIDER_SEEDS: tuple[LLMProviderSetting, ...] = (
     LLMProviderSetting(
+        name="deepseek",
+        llm_api_key="",
+        llm_base_url="https://api.deepseek.com",
+        api_format="chat_completion",
+    ),
+    LLMProviderSetting(
         name="openai",
         llm_api_key="",
         llm_base_url="https://api.openai.com/v1",
@@ -26,6 +32,11 @@ def main() -> None:
     config_logger = logger.bind(group="config")
     settings = XnneHangLabSettings.model_validate({})
     settings.agent.llm.providers = [provider.model_copy(deep=True) for provider in DEFAULT_PROVIDER_SEEDS]
+    settings.agent.chat_model.llm_provider = "deepseek"
+    settings.agent.chat_model.llm_model_name = "deepseek-v4-flash-vision-exp"
+    settings.agent.chat_model.support_vision = True
+    settings.agent.chat_model.thinking_mode = "disabled"
+    settings.agent.require_detailed = False
     write_settings_file("lab.toml", settings)
     config_logger.info(
         f"lab.toml reset successfully with seeded providers "

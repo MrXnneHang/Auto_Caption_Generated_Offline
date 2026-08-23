@@ -17,7 +17,7 @@ from lab.config_manager.package import PackagesSettings
 from lab.config_manager.server import ServerSettings
 
 toml_dumps = tomlw.dumps
-CURRENT_CONF_VERSION = "v1.6.5"
+CURRENT_CONF_VERSION = "v1.6.6"
 
 if TYPE_CHECKING:
     from lab.config_manager.qwen_asr import QwenASRSettings, QwenASRSettingsTitle

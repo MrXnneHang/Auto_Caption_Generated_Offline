@@ -23,6 +23,8 @@ def test_load_lab_settings_normalizes_conf_version(monkeypatch: MonkeyPatch, tmp
     settings = load_settings_file("lab.toml", XnneHangLabSettings)
 
     assert settings.conf_version == CURRENT_CONF_VERSION
+    assert settings.agent.chat_model.thinking_mode == "default"
+    assert settings.agent.require_detailed is False
 
     with lab_toml.open("rb") as file:
         saved = tomllib.load(file)

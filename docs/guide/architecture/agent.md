@@ -133,8 +133,10 @@ MemoryAgent 本身**不做 LLM 调用**，所有生成逻辑委托给 `AgentCore
 | 配置项 | 说明 |
 |--------|------|
 | `enable_tool` | 是否启用工具调用（`tools=schema` 传入 LLM） |
-| `chat_supports_vision` | chat_llm 是否支持图片输入；否则必须先做 vision 摘要 |
-| `require_detailed` | 是否对每张图片单独做详细摘要（True：逐图并发；False：一次多图） |
+| `chat_supports_vision` | chat_llm 是否支持图片输入；支持时原图直接进入 chat，否则走独立视觉摘要兼容路径 |
+| `require_detailed` | 仅用于非视觉 chat 的兼容路径：True 逐图并发摘要，False 一次多图摘要 |
+
+支持视觉的 chat 模型不会预先调用 `vision_model`，因此用户随消息上传或捕获的图片会与文本一起进入同一次主模型请求。截图工具仍需先由主模型发起工具调用，但工具图片返回后会直接交给同一个视觉 chat 模型，不增加独立视觉转写步骤。
 
 ## 不变量
 

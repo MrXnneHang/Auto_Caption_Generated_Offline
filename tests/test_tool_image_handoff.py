@@ -8,7 +8,7 @@ from typing import Any, cast
 import pytest
 from loguru import logger
 
-from lab.agent.agents.memory_agent.types import VisionAnalysisOutcome
+from lab.agent.agents.memory_agent.types import ImagePayload, VisionAnalysisOutcome
 from lab.agent.agents.memory_agent.user_prompt_block import UserPromptBlock
 from lab.agent.core import AgentCore, extract_tool_image_payload
 from lab.agent.output_types import ToolCallEvent
@@ -128,6 +128,24 @@ class FakeChatLLM:
             yield _tool_call_chunk()
             return
         yield _text_chunk("final answer")
+
+
+class FakeAnswerOnlyChatLLM:
+    def __init__(self) -> None:
+        self.calls: list[list[OpenAIMessage]] = []
+        self.tools: list[list[dict[str, object]] | None] = []
+
+    async def stream_with_tools(
+        self,
+        messages: list[OpenAIMessage],
+        *,
+        system: str | None = None,
+        tools: list[dict[str, object]] | None = None,
+    ):
+        del system
+        self.calls.append([message.model_copy(deep=True) for message in messages])
+        self.tools.append(tools)
+        yield _text_chunk("direct answer")
 
 
 class FakeFallbackAwareChatLLM(FakeChatLLM):
@@ -342,6 +360,173 @@ async def _collect_tokens(core: AgentCore) -> str:
 @pytest.fixture()
 def agent_ctx(tmp_path: Path) -> AgentContext:
     return AgentContext(workspace_root=tmp_path)
+
+
+def test_plain_text_stays_on_single_chat_call(agent_ctx: AgentContext) -> None:
+    chat_llm = FakeAnswerOnlyChatLLM()
+    core = AgentCore(
+        chat_llm=cast("Any", chat_llm),
+        vision_llm=cast("Any", object()),
+        tool_manager=None,
+        agent_context=agent_ctx,
+        context_injector=None,
+        storage=DummyStorage(),
+        chat_system_prompt="system",
+        vision_system_prompt="vision",
+        require_detailed=True,
+    )
+    core.chat_supports_vision = True
+    assert core.vision is not None
+
+    async def _unexpected_summary(**kwargs: object):
+        raise AssertionError(f"plain text must not call the vision summarizer: {kwargs}")
+
+    core.vision.summarize_upload_images_by_mode = _unexpected_summary
+
+    assert asyncio.run(_collect_tokens(core)) == "direct answer"
+    assert len(chat_llm.calls) == 1
+    assert isinstance(chat_llm.calls[0][-1].content, str)
+
+
+def test_upload_images_go_directly_to_visual_chat_model_in_one_call(agent_ctx: AgentContext) -> None:
+    chat_llm = FakeAnswerOnlyChatLLM()
+    core = AgentCore(
+        chat_llm=cast("Any", chat_llm),
+        vision_llm=cast("Any", object()),
+        tool_manager=cast(
+            "Any",
+            FakeToolManager(ToolResult(ok=True, text="unused")),
+        ),
+        agent_context=agent_ctx,
+        context_injector=None,
+        storage=DummyStorage(),
+        chat_system_prompt="system",
+        vision_system_prompt="vision",
+        enable_tool=True,
+        require_detailed=True,
+    )
+    core.chat_supports_vision = True
+
+    assert core.vision is not None
+
+    async def _unexpected_summary(**kwargs: object):
+        raise AssertionError(f"visual chat fast path must not call the vision summarizer: {kwargs}")
+
+    core.vision.summarize_upload_images_by_mode = _unexpected_summary
+
+    async def _run() -> str:
+        chunks: list[str] = []
+        async for token in core.run_turn(
+            user_text="compare these images",
+            user_images=[
+                ImagePayload(label="p1", b64="ZmFrZTE=", mime="image/png", source="upload"),
+                ImagePayload(label="p2", b64="ZmFrZTI=", mime="image/jpeg", source="upload"),
+            ],
+        ):
+            if not isinstance(token, ToolCallEvent):
+                chunks.append(token)
+        return "".join(chunks)
+
+    assert asyncio.run(_run()) == "direct answer"
+    assert len(chat_llm.calls) == 1
+    assert chat_llm.tools[0] is not None
+
+    user_message = chat_llm.calls[0][-1]
+    assert user_message.role == "user"
+    assert isinstance(user_message.content, list)
+    assert [part.type for part in user_message.content] == ["text", "text", "image_url", "text", "image_url"]
+    assert isinstance(user_message.content[0], TextPart)
+    assert "compare these images" in user_message.content[0].text
+    assert isinstance(user_message.content[1], TextPart)
+    assert user_message.content[1].text == "\n\n[p1]"
+    assert isinstance(user_message.content[2], ImagePart)
+    assert user_message.content[2].image_url.url == "data:image/png;base64,ZmFrZTE="
+    assert isinstance(user_message.content[3], TextPart)
+    assert user_message.content[3].text == "\n\n[p2]"
+    assert isinstance(user_message.content[4], ImagePart)
+    assert user_message.content[4].image_url.url == "data:image/jpeg;base64,ZmFrZTI="
+
+
+def test_upload_image_uses_vision_summary_for_text_only_chat_model(agent_ctx: AgentContext) -> None:
+    chat_llm = FakeAnswerOnlyChatLLM()
+    storage = DummyStorage()
+    core = AgentCore(
+        chat_llm=cast("Any", chat_llm),
+        vision_llm=cast("Any", object()),
+        tool_manager=None,
+        agent_context=agent_ctx,
+        context_injector=None,
+        storage=storage,
+        chat_system_prompt="system",
+        vision_system_prompt="vision",
+        require_detailed=False,
+    )
+    core.chat_supports_vision = False
+    assert core.vision is not None
+
+    captured: dict[str, object] = {}
+
+    async def _summarize_uploads(**kwargs: object):
+        captured.update(kwargs)
+        return {
+            "p1": VisionAnalysisOutcome.success(
+                summary='{"scene":"editor","summary":"terminal and file tree"}',
+                brief="editor",
+            )
+        }
+
+    core.vision.summarize_upload_images_by_mode = _summarize_uploads
+
+    async def _run() -> str:
+        chunks: list[str] = []
+        async for token in core.run_turn(
+            user_text="what is shown?",
+            user_images=[ImagePayload(label="p1", b64="ZmFrZQ==", mime="image/png", source="upload")],
+        ):
+            if not isinstance(token, ToolCallEvent):
+                chunks.append(token)
+        return "".join(chunks)
+
+    assert asyncio.run(_run()) == "direct answer"
+    assert captured["require_detailed"] is False
+    assert captured["upload_images"] == [("ZmFrZQ==", "image/png")]
+    assert len(chat_llm.calls) == 1
+    user_message = chat_llm.calls[0][-1]
+    assert isinstance(user_message.content, str)
+    assert "[User Upload Image Summary]" in user_message.content
+    assert "terminal and file tree" in user_message.content
+    assert "data:image" not in user_message.content
+
+
+def test_upload_image_without_any_vision_model_injects_failure_state(agent_ctx: AgentContext) -> None:
+    chat_llm = FakeAnswerOnlyChatLLM()
+    core = AgentCore(
+        chat_llm=cast("Any", chat_llm),
+        vision_llm=None,
+        tool_manager=None,
+        agent_context=agent_ctx,
+        context_injector=None,
+        storage=DummyStorage(),
+        chat_system_prompt="system",
+    )
+    core.chat_supports_vision = False
+
+    async def _run() -> str:
+        chunks: list[str] = []
+        async for token in core.run_turn(
+            user_text="what is shown?",
+            user_images=[ImagePayload(label="p1", b64="ZmFrZQ==", mime="image/png", source="upload")],
+        ):
+            if not isinstance(token, ToolCallEvent):
+                chunks.append(token)
+        return "".join(chunks)
+
+    assert asyncio.run(_run()) == "direct answer"
+    user_message = chat_llm.calls[0][-1]
+    assert isinstance(user_message.content, str)
+    assert "[Vision Failure State]" in user_message.content
+    assert "There is not enough verified visual evidence" in user_message.content
+    assert "data:image" not in user_message.content
 
 
 def test_extract_tool_image_payload_from_screenshot_result() -> None:
