@@ -1,0 +1,103 @@
+[character]
+avatar = "kaguya.png"
+character_name = "辉夜"
+human_name = "Human"
+live2d_model_name = "baoqiao"
+location_city = "厦门"
+location_lat = 24.4798
+location_lng = 118.0894
+
+[character.tts]
+character_name = "luming-v2-pro-plus"
+voice = "luming"
+
+[character.tts_preprocessor]
+ignore_angle_brackets = true
+ignore_asterisks = true
+ignore_brackets = true
+ignore_parentheses = true
+remove_special_char = true
+
+[plugins]
+enabled = [
+    "pre_tool_preview",
+    "tool_call_integrity",
+    "web_fetch",
+    "screen_shot",
+    "diary",
+    "live2d_control",
+    "web_search_ddg",
+    "visual_observer",
+    "mood_chat",
+]
+
+[plugins.live2d_control.states.listening]
+backend_pose_layer = 0
+idle_layer = 1
+mode = "random_no_repeat"
+mouse_attention_layer = 1
+speech_layer = 0
+
+[[plugins.live2d_control.states.listening.clips]]
+url = "idle1"
+
+[[plugins.live2d_control.states.listening.clips]]
+url = "idle2"
+
+[[plugins.live2d_control.states.listening.clips]]
+url = "idle3"
+
+[[plugins.live2d_control.states.listening.clips]]
+url = "idle4"
+
+[[plugins.live2d_control.states.listening.clips]]
+url = "idle5"
+
+[[plugins.live2d_control.states.listening.clips]]
+url = "idle6"
+
+[plugins.live2d_control.states.speaking]
+backend_pose_layer = 0
+idle_layer = 1
+mode = "random_no_repeat"
+mouse_attention_layer = 1.5
+speech_layer = 0
+
+[[plugins.live2d_control.states.speaking.clips]]
+url = "idle6"
+
+[[plugins.live2d_control.states.speaking.clips]]
+url = "idle4"
+
+[[plugins.live2d_control.states.speaking.clips]]
+url = "idle5"
+
+[[plugins.live2d_control.states.speaking.clips]]
+url = "idle3"
+
+[[plugins.live2d_control.states.speaking.clips]]
+url = "idle2"
+
+[[plugins.live2d_control.states.speaking.clips]]
+url = "idle1"
+
+[plugins.memory]
+agent_id = "baoqiao"
+search_limit = 3
+user_id = "xnne"
+
+[plugins.mood_chat]
+game_companion_mode = true
+game_prompt_suffix = "根据视觉轮询结果自然地回应。如果你发现 OCR 原文片段和摘要对不上，或者文字看起来怪怪的，可以吐槽自己的眼睛。保持角色语气，不超过两句话。"
+prompt = "请根据上下文，主动说些什么，如果上下文较少，或者最近正在做一些视觉上的工作，比如逛 pixiv 插画网站，或者玩 galgame，你可以调用截图能力（如果开启了的话），参与其中。"
+
+[plugins.visual_observer]
+vision_boost = false
+
+[profile]
+description = "VTuber 主链路 - 辉夜"
+
+[prompt]
+format = "prompts/formats/control_tags.md"
+persona = "prompts/characters/kaguya.md"
+show_control_tags = false
