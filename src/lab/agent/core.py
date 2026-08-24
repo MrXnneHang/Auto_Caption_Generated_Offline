@@ -449,6 +449,29 @@ class AgentCore:
                         ",".join(sorted({outcome.status for outcome in upload_failures.values()})),
                     )
                     mem_entry = self._append_context_entry(mem_entry, grouped_failure)
+        elif self.require_detailed and self.vision is not None and user_images:
+            upload_outcomes = await self.vision.summarize_upload_images_by_mode(
+                user_input_text=user_text,
+                upload_images=[(img.b64, img.mime) for img in user_images],
+                require_detailed=True,
+            )
+            upload_summaries, upload_briefs, upload_failures = self._split_vision_outcomes(upload_outcomes)
+            if upload_summaries:
+                vision_upload_entry = self.prompt.make_vision_upload_summary(
+                    upload_summaries,
+                    upload_briefs,
+                )
+            grouped_failure = self._make_grouped_failure_entry(
+                source_kind="uploaded image",
+                outcomes=upload_failures,
+            )
+            if grouped_failure is not None:
+                logger.warning(
+                    "[VISION] anti-hallucination fallback injected: source=uploaded image label={} status={}",
+                    ",".join(sorted(upload_failures)),
+                    ",".join(sorted({outcome.status for outcome in upload_failures.values()})),
+                )
+                mem_entry = self._append_context_entry(mem_entry, grouped_failure)
 
         # —— 组装 UserPromptBlock ——
         user_block = self.prompt.build(

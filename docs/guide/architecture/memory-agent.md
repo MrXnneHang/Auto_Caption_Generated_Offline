@@ -85,7 +85,8 @@ MemoryAgent (agent.py)                ← 编排器
 |---|---|---|
 | False | False | 兼容路径：视觉模型一次处理多图，摘要后交给纯文本 chat |
 | False | True | 兼容路径：视觉模型逐图并发生成详细摘要，再交给纯文本 chat |
-| True | any | 快速路径：图片直接喂 chat，不调用独立视觉摘要模型（正常视觉输入为 1 LLM delay） |
+| True | False | 快速路径：图片直接喂 chat，不调用独立视觉摘要模型（正常视觉输入为 1 LLM delay） |
+| True | True | 图片直接喂 chat，同时由视觉模型逐图生成详细摘要 |
 
 ### History 不存 base64
 

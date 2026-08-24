@@ -403,7 +403,7 @@ def test_upload_images_go_directly_to_visual_chat_model_in_one_call(agent_ctx: A
         chat_system_prompt="system",
         vision_system_prompt="vision",
         enable_tool=True,
-        require_detailed=True,
+        require_detailed=False,
     )
     core.chat_supports_vision = True
 
@@ -445,6 +445,61 @@ def test_upload_images_go_directly_to_visual_chat_model_in_one_call(agent_ctx: A
     assert user_message.content[3].text == "\n\n[p2]"
     assert isinstance(user_message.content[4], ImagePart)
     assert user_message.content[4].image_url.url == "data:image/jpeg;base64,ZmFrZTI="
+
+
+def test_visual_chat_model_keeps_detailed_summary_mode(agent_ctx: AgentContext) -> None:
+    chat_llm = FakeAnswerOnlyChatLLM()
+    storage = DummyStorage()
+    core = AgentCore(
+        chat_llm=cast("Any", chat_llm),
+        vision_llm=cast("Any", object()),
+        tool_manager=None,
+        agent_context=agent_ctx,
+        context_injector=None,
+        storage=storage,
+        chat_system_prompt="system",
+        vision_system_prompt="vision",
+        require_detailed=True,
+    )
+    core.chat_supports_vision = True
+    assert core.vision is not None
+
+    captured: dict[str, object] = {}
+
+    async def _summarize_uploads(**kwargs: object):
+        captured.update(kwargs)
+        return {
+            "p1": VisionAnalysisOutcome.success(
+                summary='{"scene":"editor","summary":"terminal and file tree"}',
+                brief="editor",
+            )
+        }
+
+    core.vision.summarize_upload_images_by_mode = _summarize_uploads
+
+    async def _run() -> str:
+        chunks: list[str] = []
+        async for token in core.run_turn(
+            user_text="what is shown?",
+            user_images=[ImagePayload(label="p1", b64="ZmFrZQ==", mime="image/png", source="upload")],
+        ):
+            if not isinstance(token, ToolCallEvent):
+                chunks.append(token)
+        return "".join(chunks)
+
+    assert asyncio.run(_run()) == "direct answer"
+    assert captured["require_detailed"] is True
+    assert len(chat_llm.calls) == 1
+    user_message = chat_llm.calls[0][-1]
+    assert isinstance(user_message.content, list)
+    first_part = user_message.content[0]
+    assert isinstance(first_part, TextPart)
+    assert "[User Upload Image Summary]" in first_part.text
+    assert "terminal and file tree" in first_part.text
+    assert any(isinstance(part, ImagePart) for part in user_message.content)
+    stored_user_block, _ = storage.turns[0]
+    assert isinstance(stored_user_block, UserPromptBlock)
+    assert stored_user_block.vision_upload_summary is not None
 
 
 def test_upload_image_uses_vision_summary_for_text_only_chat_model(agent_ctx: AgentContext) -> None:

@@ -148,7 +148,7 @@ root_dir = "D:\\tmp\\XnneHangLab"
 | speaker_lang | 语音输出语言 |
 | faster_first_response | 是否偏向更快首响 |
 | max_vision_concurrency | 最大视觉请求并发数 |
-| require_detailed | 非视觉对话模型兼容路径的视觉摘要粒度：`true` 逐图并发，`false` 一次多图；视觉对话模型始终直接接收原图 |
+| require_detailed | 是否为上传图片生成逐图详细摘要；`false` 时视觉对话模型直接接收原图，纯文本对话模型使用一次多图摘要 |
 | structured_history_full_turns | 最近保留完整结构化历史的轮数 |
 | segment_method | 分句方式：`regex` / `pysbd` |
 | interrupt_method | 中断信号写入方式：`system` / `user` |
