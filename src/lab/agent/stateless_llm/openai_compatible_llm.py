@@ -21,6 +21,14 @@ if TYPE_CHECKING:
 
     from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
+    from lab.config_manager.agent import ThinkingMode
+
+
+def build_thinking_extra_body(thinking_mode: ThinkingMode) -> dict[str, dict[str, str]] | None:
+    if thinking_mode == "default":
+        return None
+    return {"thinking": {"type": thinking_mode}}
+
 
 def normalize_messages(
     messages: Sequence[OpenAIMessage | dict[str, Any]],
@@ -52,10 +60,12 @@ class AsyncLLM:
         organization_id: str = "z",
         project_id: str = "z",
         temperature: float = 1.0,
+        thinking_mode: ThinkingMode = "default",
     ) -> None:
         self.base_url = base_url
         self.model = model
         self.temperature = temperature
+        self.thinking_extra_body = build_thinking_extra_body(thinking_mode)
 
         # localhost/127.0.0.1 绕过系统代理（Clash 等会拦截本地请求导致 502）
         # trust_env=False 阻止 httpx 读取 HTTP_PROXY/HTTPS_PROXY 等环境变量
@@ -90,6 +100,8 @@ class AsyncLLM:
             "stream": stream,
             "temperature": temperature,
         }
+        if self.thinking_extra_body is not None:
+            kwargs["extra_body"] = {key: dict(value) for key, value in self.thinking_extra_body.items()}
         if tools:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = tool_choice or "auto"

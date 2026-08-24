@@ -10,12 +10,13 @@ from loguru import logger
 from pydantic import BaseModel, ValidationError
 
 from lab.config_manager import TranslateProvider, XnneHangLabSettings, load_settings_file, write_settings_file
-from lab.config_manager.agent import LLMProviderSetting, TTSProvider
+from lab.config_manager.agent import LLMProviderSetting, ThinkingMode, TTSProvider
 
 ApiFormat = Literal["chat_completion"]
 EmbeddingPoolingType = Literal["mean", "cls", "last"]
 ALLOWED_API_FORMATS: tuple[ApiFormat, ...] = ("chat_completion",)
 ALLOWED_EMBEDDING_POOLING_TYPES: tuple[EmbeddingPoolingType, ...] = ("mean", "cls", "last")
+ALLOWED_THINKING_MODES: tuple[ThinkingMode, ...] = ("default", "enabled", "disabled")
 ALLOWED_TTS_PROVIDERS: tuple[TTSProvider, ...] = ("none", "gsv_lite", "genie_tts", "qwen_tts")
 GENIE_TTS_LANGUAGE_ALIASES: dict[str, str] = {
     "chinese": "Chinese",
@@ -85,6 +86,13 @@ def validate_provider_name(value: str, available_names: set[str], env_key_name: 
     if normalized in available_names:
         return normalized
     raise ValueError(f"Invalid {env_key_name}={value!r}, available providers={sorted(available_names)}")
+
+
+def validate_thinking_mode(value: str, env_key_name: str) -> ThinkingMode:
+    normalized = value.strip().lower()
+    if normalized in ALLOWED_THINKING_MODES:
+        return cast("ThinkingMode", normalized)
+    raise ValueError(f"Invalid {env_key_name}={value!r}, available thinking modes={list(ALLOWED_THINKING_MODES)}")
 
 
 def is_tts_provider(value: str) -> TypeGuard[TTSProvider]:
@@ -237,6 +245,11 @@ def main() -> None:
         settings.agent.chat_model.support_vision = (
             os.environ.get("CHAT_MODEL_SUPPORT_VISION", "false").lower() == "true"
         )
+    if "CHAT_MODEL_THINKING_MODE" in os.environ:
+        settings.agent.chat_model.thinking_mode = validate_thinking_mode(
+            os.environ.get("CHAT_MODEL_THINKING_MODE", "default"),
+            "CHAT_MODEL_THINKING_MODE",
+        )
 
     if "VISION_MODEL_PROVIDER" in os.environ:
         settings.agent.vision_model.llm_provider = validate_provider_name(
@@ -289,6 +302,7 @@ def main() -> None:
     logger.info("agent.chat_model.llm_provider: {}", settings.agent.chat_model.llm_provider)
     logger.info("agent.chat_model.llm_model_name: {}", settings.agent.chat_model.llm_model_name)
     logger.info("agent.chat_model.support_vision: {}", settings.agent.chat_model.support_vision)
+    logger.info("agent.chat_model.thinking_mode: {}", settings.agent.chat_model.thinking_mode)
     logger.info("agent.vision_model.llm_provider: {}", settings.agent.vision_model.llm_provider)
     logger.info("agent.vision_model.llm_model_name: {}", settings.agent.vision_model.llm_model_name)
     logger.info("agent.tts.provider: {}", settings.agent.tts.provider)

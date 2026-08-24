@@ -148,7 +148,7 @@ root_dir = "D:\\tmp\\XnneHangLab"
 | speaker_lang | 语音输出语言 |
 | faster_first_response | 是否偏向更快首响 |
 | max_vision_concurrency | 最大视觉请求并发数 |
-| require_detailed | 是否要求更详细的视觉总结 |
+| require_detailed | 是否为上传图片生成逐图详细摘要；`false` 时视觉对话模型直接接收原图，纯文本对话模型使用一次多图摘要 |
 | structured_history_full_turns | 最近保留完整结构化历史的轮数 |
 | segment_method | 分句方式：`regex` / `pysbd` |
 | interrupt_method | 中断信号写入方式：`system` / `user` |
@@ -163,7 +163,7 @@ user_lang = "ZH"
 speaker_lang = "ZH"
 faster_first_response = false
 max_vision_concurrency = 4
-require_detailed = true
+require_detailed = false
 structured_history_full_turns = 5
 segment_method = "pysbd"
 interrupt_method = "user"
@@ -265,10 +265,16 @@ warmup_cuda_graphs = true
 
 ```toml
 [agent.chat_model]
-llm_provider = "openai"
-llm_model_name = "gpt-4.1"
-support_vision = false
+llm_provider = "deepseek"
+llm_model_name = "deepseek-v4-flash-vision-exp"
+support_vision = true
+thinking_mode = "disabled"
 ```
+
+| 字段 | 说明 |
+|---|---|
+| support_vision | 开启时，文本与图片直接进入同一次主模型请求；关闭时，图片先由 `[agent.vision_model]` 摘要，以兼容纯文本模型 |
+| thinking_mode | `default` 不发送提供商扩展参数；`enabled` / `disabled` 显式开关支持 thinking 参数的模型。DeepSeek 实时视觉交互建议使用 `disabled` |
 
 ### 👁️ [agent.vision_model]
 

@@ -154,6 +154,7 @@ class AgentFactory:
             model=chat_model.llm_model_name,
             base_url=chat_llm.llm_base_url,
             llm_api_key=chat_llm.llm_api_key,
+            thinking_mode=chat_model.thinking_mode,
         )
         vision_llm_interface = None
         if not vision_model.llm_model_name.strip() or not vision_llm.llm_base_url.strip():

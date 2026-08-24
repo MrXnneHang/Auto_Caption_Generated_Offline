@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from lab.config_manager.qwen_tts import QwenTTSSettings
 
 LLM_Provider = str
+ThinkingMode = Literal["default", "enabled", "disabled"]
 TranslateProvider = Literal["none", "llm", "deeplx"]
 TTSProvider = Literal["none", "gsv_lite", "genie_tts", "qwen_tts"]
 GenieTTSLanguage = Literal["Chinese", "English", "Japanese", "Hybrid-Chinese-English", "Korean", "auto"]
@@ -16,6 +17,14 @@ class ChatModelSetting(BaseModel):
     llm_provider: Annotated[str, Field("", title="LLM Provider for Chat Model")]
     llm_model_name: Annotated[str, Field("", title="Chat Model Name")]
     support_vision: Annotated[bool, Field(False, title="Whether the chat model supports vision input")]
+    thinking_mode: Annotated[
+        ThinkingMode,
+        Field(
+            "default",
+            title="Chat Model Thinking Mode",
+            description="Use the provider default, or explicitly enable/disable supported thinking mode.",
+        ),
+    ]
 
 
 class VisionModelSetting(BaseModel):
@@ -270,7 +279,7 @@ class AgentSettings(BaseModel):
             title="Maximum concurrent vision requests",
         ),
     ]
-    require_detailed: Annotated[bool, Field(True, title="Require Detailed Vision Summary")]
+    require_detailed: Annotated[bool, Field(False, title="Require Detailed Vision Summary")]
     structured_history_full_turns: Annotated[
         int,
         Field(
