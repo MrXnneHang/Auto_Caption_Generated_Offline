@@ -4,6 +4,31 @@ from pathlib import Path
 
 from lab.config_manager import XnneHangLabSettings
 from lab.config_manager.validators import validate_all, validate_startup
+from lab.profile.schema import Profile
+
+
+def test_kaguya_profile_reuses_baoqiao_runtime_assets() -> None:
+    baoqiao = Profile.from_toml(Path("profiles/baoqiao.toml"))
+    kaguya = Profile.from_toml(Path("profiles/kaguya.toml"))
+
+    assert baoqiao.character is not None
+    assert kaguya.character is not None
+    assert kaguya.character.character_name == "辉夜"
+    assert kaguya.character.avatar == "kaguya.png"
+    assert (Path("static/avatars") / kaguya.character.avatar).is_file()
+    assert kaguya.character.live2d_model_name == baoqiao.character.live2d_model_name == "baoqiao"
+    assert kaguya.character.location_city == baoqiao.character.location_city
+    assert kaguya.character.location_lat == baoqiao.character.location_lat
+    assert kaguya.character.location_lng == baoqiao.character.location_lng
+    assert kaguya.character.tts == baoqiao.character.tts
+    assert kaguya.character.tts_preprocessor == baoqiao.character.tts_preprocessor
+    assert kaguya.prompt.format == baoqiao.prompt.format
+    assert kaguya.prompt.show_control_tags == baoqiao.prompt.show_control_tags
+    assert "visual_observer" in kaguya.plugins.enabled
+    assert "mood_chat" in kaguya.plugins.enabled
+    assert kaguya.plugins.overrides["visual_observer"]["vision_boost"] is False
+    assert kaguya.plugins.overrides["mood_chat"]["game_companion_mode"] is True
+    assert Path(kaguya.prompt.persona or "").is_file()
 
 
 def _base_settings(tmp_path: Path) -> XnneHangLabSettings:
