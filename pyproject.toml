@@ -22,7 +22,6 @@ dependencies = [
     "python-dotenv>=1.1.1",
     "bs4>=0.0.2",
     "grpcio==1.78.0",
-    "modelscope>=1.23.1",
 ]
 authors = [{ name = "MrXnneHang", email = "XnneHang@gmail.com" }]
 keywords = []
@@ -139,7 +138,7 @@ qwen-tts = [
 ]
 
 [tool.uv]
-default-groups = ["base", "ocr", "qwen-asr", "dev", "llama-cpp", "tts_base", "gsv-lite", "genie-tts", "qwen-tts", "vtuber", "sherpa-onnx", "wikimem"]
+default-groups = ["base", "ocr", "dev", "llama-cpp", "vtuber", "wikimem"]
 
 [tool.uv.workspace]
 members = ["packages/Qwen3-ASR", "packages/GSV-TTS-Lite", "packages/wikimem"]

@@ -155,10 +155,12 @@ async def get_runtime_status(request: Request) -> dict[str, Any]:
     else:
         weather_error = "未配置位置"
 
+    capabilities = getattr(request.app.state, "runtime_capabilities", None)
     result: dict[str, Any] = {
         "online": True,
         "mood_score": mood_score,
         "proactive_interval_s": proactive_interval,
+        "capabilities": capabilities.model_dump(mode="json") if capabilities is not None else None,
     }
     if weather:
         result["weather"] = weather
@@ -166,6 +168,14 @@ async def get_runtime_status(request: Request) -> dict[str, Any]:
         result["weather_error"] = weather_error
 
     return result
+
+
+@router.get("/capabilities")
+async def get_runtime_capabilities(request: Request) -> dict[str, Any]:
+    capabilities = getattr(request.app.state, "runtime_capabilities", None)
+    if capabilities is None:
+        return {"schema_version": 1, "voice": {}}
+    return capabilities.model_dump(mode="json")
 
 
 @router.get("/visual-observer")

@@ -195,12 +195,15 @@ async def send_conversation_start_signals_for_turn(
 
 
 async def process_user_input(
-    user_input: str | np.ndarray[Any, Any],  #  text, 或者 mico
-    # asr_engine: Any,  # 假设 asr_engine 存在，修正注释中的类型提示
+    user_input: str | np.ndarray[Any, Any],
     websocket_send: WebSocketSend,
+    lab_setting: XnneHangLabSettings | None = None,
 ) -> str:
     """Process user input, converting audio to text if needed"""
     if isinstance(user_input, np.ndarray):
+        if lab_setting is not None and lab_setting.asr.asr_model_provider == "none":
+            raise RuntimeError("ASR is disabled in lab.toml. Use text input or enable an ASR service.")
+
         logger.info("Transcribing audio input...")
         # 确保 cache 目录存在
         cache_dir = Path("cache")
@@ -215,7 +218,7 @@ async def process_user_input(
             # 将音频数据写入文件
             sf.write(audio_file_path, user_input, samplerate=16000)  # 假设采样率为 16000 Hz
             # 使用文件路径调用异步转录方法
-            asr_client = ASRClient()
+            asr_client = ASRClient(lab_setting=lab_setting) if lab_setting is not None else ASRClient()
             response = await asr_client.asyncpost(ASRRequest(file_path=audio_file_path))
             if response is None:
                 raise RuntimeError(

@@ -112,25 +112,39 @@ git submodule update --init --recursive voices static packages/* frontend
 
 ---
 
-### 📥 2. 安装依赖 + 下载模型权重
+### 📥 2. 轻量安装与按需启用语音
 
-**依赖**：`uv` 会在首次 `uv run` / `just server` 时自动创建环境并安装依赖，无需手动操作。
+默认 `uv sync` 只安装角色、Memory、日记、云端 LLM 对话和 Core 所需的轻量依赖；不安装本地 ASR/TTS 推理包，也不下载语音模型：
 
-**模型权重**：统一通过 **Launcher 的 Models 页面** 下载管理（`launcher/` 子模块，Tauri 桌面应用）。唯一的例外是 Qwen ASR：
+```bash
+uv sync
+just server
+```
+
+在轻量模式下，保持以下配置即可：
+
+```toml
+[asr]
+asr_model_provider = "none"
+
+[agent.tts]
+provider = "none"
+```
+
+需要语音时，先安装所选 provider 的 group，再在 `config/lab.toml` 中同时启用 provider 和对应 `[package]` 开关：
+
+```bash
+uv sync --group sherpa-onnx
+uv sync --group tts_base --group genie-tts
+```
+
+Qwen ASR 使用 `qwen-asr` group；GSV-Lite 使用 `tts_base` 与 `gsv-lite`；Qwen-TTS 使用 `tts_base` 与 `qwen-tts`。模型权重仍由 Launcher 的 Models 页面管理；Qwen ASR 可使用：
 
 ```bash
 just install-qwen-asr
 ```
 
-> 🐢 模型体积都不小，下载过程可能较久。
-
-下载完成后可检查 `models/` 目录：
-
-```powershell
-ls .\models\
-```
-
-📄 `models/download.md` 会记录你下载了哪些模型，也可以按需只下载你需要的模型。
+> 本地语音并不是角色、Memory 或日记的前置条件。选择 `none` 时，Core 不会导入、检查或预加载本地语音实现。
 
 ---
 

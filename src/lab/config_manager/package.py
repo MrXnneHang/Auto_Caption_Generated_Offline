@@ -21,23 +21,23 @@ class PackagesSettings(BaseModel):
     ]
     sherpa_asr: Annotated[
         bool,
-        Field(True, title="Sherpa ASR", description="是否安装了 sherpa-onnx ASR 引擎"),
+        Field(False, title="Sherpa ASR", description="是否安装了 sherpa-onnx ASR 引擎"),
     ]
     qwen_asr: Annotated[
         bool,
-        Field(True, title="Qwen ASR", description="是否安装了 Qwen ASR 引擎"),
+        Field(False, title="Qwen ASR", description="是否安装了 Qwen ASR 引擎"),
     ]
     gsv_lite: Annotated[
         bool,
-        Field(True, title="GSV-Lite", description="是否安装了 GSV-Lite TTS 引擎"),
+        Field(False, title="GSV-Lite", description="是否安装了 GSV-Lite TTS 引擎"),
     ]
     genie_tts: Annotated[
         bool,
-        Field(True, title="Genie TTS", description="是否安装了 Genie-TTS 引擎"),
+        Field(False, title="Genie TTS", description="是否安装了 Genie-TTS 引擎"),
     ]
     qwen_tts: Annotated[
         bool,
-        Field(True, title="Qwen TTS", description="是否安装了 Qwen TTS 引擎"),
+        Field(False, title="Qwen TTS", description="是否安装了 Qwen TTS 引擎"),
     ]
 
     def to_dict(self) -> Packages:

@@ -367,7 +367,7 @@ class MoodChatPlugin(HookPlugin):
                 return False
 
             turn_id = create_turn_id()
-            tts_manager = TTSTaskManager(turn_id=turn_id)
+            tts_manager = TTSTaskManager(turn_id=turn_id, lab_setting=runtime.service_context.lab_setting)
             await send_conversation_start_signals_for_turn(
                 runtime.websocket_send,
                 turn_id,

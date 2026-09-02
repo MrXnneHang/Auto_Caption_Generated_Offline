@@ -24,7 +24,7 @@ uv run run_server.py --port 8080
 
 ## 路由总览
 
-各路由模块按 `lab.toml` 中的 `[package]` 开关**条件加载**，未启用的模块不会注册路由。
+各语音路由按 `asr.asr_model_provider` / `agent.tts.provider` 与对应 `[package]` 开关条件加载；未启用或缺少 package 的 provider 不会注册语音端点。`GET /status/capabilities` 是客户端发现语音能力的稳定接口。
 
 ```text
 /
@@ -60,6 +60,8 @@ uv run run_server.py --port 8080
 │     ├─ POST /                       DeepLX 翻译
 │     └─ GET /health                  健康检查
 │
+├─ /status                            运行状态（含 capabilities）
+├─ /status/capabilities               语音能力状态（schema_version = 1）
 ├─ /client-ws                         🔌 WebSocket（Open-LLM-VTuber 对话）
 │
 ├─ /memory                            🧠 记忆聊天（需要 agent.memory_chat_profile）

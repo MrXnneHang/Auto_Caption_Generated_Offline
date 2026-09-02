@@ -143,7 +143,7 @@ agent_name = "congyin"
     assert any("duplicate key" in err for err in errors)
 
 
-def test_validate_uses_active_profile_character_tts_model(tmp_path: Path) -> None:
+def test_validate_skips_profile_tts_model_when_global_tts_is_disabled(tmp_path: Path) -> None:
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
     (profiles_dir / "vtuber.toml").write_text(
@@ -176,7 +176,7 @@ format = "prompts/formats/emotion_bracket.md"
 
     errors = validate_all(settings)
 
-    assert any("models" in err and "genie-tts" in err and "baoqiao" in err for err in errors)
+    assert not any("genie-tts" in err and "baoqiao" in err for err in errors)
 
 
 def test_validate_uses_gsv_lite_engine_model_directory(tmp_path: Path) -> None:
@@ -248,7 +248,7 @@ character_name = "baoqiao"
     assert any("genie-tts" in err and "baoqiao" in err for err in errors)
 
 
-def test_validate_prefers_profile_tts_engine_over_global_provider(tmp_path: Path) -> None:
+def test_validate_does_not_enable_profile_tts_package_implicitly(tmp_path: Path) -> None:
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
     (profiles_dir / "vtuber.toml").write_text(
@@ -277,12 +277,13 @@ engine = "qwen_tts"
     settings.agent.memory_agent_profile = "profiles/vtuber.toml"
     settings.package.qwen_tts = False
 
-    validate_all(settings)
+    errors = validate_all(settings)
 
-    assert settings.package.qwen_tts is True
+    assert settings.package.qwen_tts is False
+    assert any("package.qwen_tts = false" in error for error in errors)
 
 
-def test_validate_prefers_voice_toml_engine_over_global_provider(tmp_path: Path) -> None:
+def test_validate_does_not_enable_voice_tts_package_implicitly(tmp_path: Path) -> None:
     profiles_dir = tmp_path / "profiles"
     profiles_dir.mkdir()
     (profiles_dir / "vtuber.toml").write_text(
@@ -321,9 +322,10 @@ preferred_engine = "gsv_lite"
     settings.agent.memory_agent_profile = "profiles/vtuber.toml"
     settings.package.gsv_lite = False
 
-    validate_all(settings)
+    errors = validate_all(settings)
 
-    assert settings.package.gsv_lite is True
+    assert settings.package.gsv_lite is False
+    assert any("package.gsv_lite = false" in error for error in errors)
 
 
 def test_validate_reports_missing_explicit_voice_config(tmp_path: Path) -> None:
@@ -432,31 +434,34 @@ def test_validate_startup_warns_for_disabled_asr_provider_selection(tmp_path: Pa
     assert any('asr_model_provider = "sherpa"' in warning for warning in warnings)
 
 
-def test_validate_auto_enables_disabled_qwen_tts_package(tmp_path: Path) -> None:
+def test_validate_reports_disabled_qwen_tts_package_without_mutating_settings(tmp_path: Path) -> None:
     settings = _base_settings(tmp_path)
     settings.agent.tts.provider = "qwen_tts"
     settings.package.qwen_tts = False
 
-    validate_all(settings)
+    errors = validate_all(settings)
 
-    assert settings.package.qwen_tts is True
+    assert settings.package.qwen_tts is False
+    assert any("package.qwen_tts = false" in error for error in errors)
 
 
-def test_validate_auto_enables_disabled_gsv_lite_package(tmp_path: Path) -> None:
+def test_validate_reports_disabled_gsv_lite_package_without_mutating_settings(tmp_path: Path) -> None:
     settings = _base_settings(tmp_path)
     settings.agent.tts.provider = "gsv_lite"
     settings.package.gsv_lite = False
 
-    validate_all(settings)
+    errors = validate_all(settings)
 
-    assert settings.package.gsv_lite is True
+    assert settings.package.gsv_lite is False
+    assert any("package.gsv_lite = false" in error for error in errors)
 
 
-def test_validate_auto_enables_disabled_genie_tts_package(tmp_path: Path) -> None:
+def test_validate_reports_disabled_genie_tts_package_without_mutating_settings(tmp_path: Path) -> None:
     settings = _base_settings(tmp_path)
     settings.agent.tts.provider = "genie_tts"
     settings.package.genie_tts = False
 
-    validate_all(settings)
+    errors = validate_all(settings)
 
-    assert settings.package.genie_tts is True
+    assert settings.package.genie_tts is False
+    assert any("package.genie_tts = false" in error for error in errors)

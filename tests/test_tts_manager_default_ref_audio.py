@@ -384,7 +384,21 @@ def test_tts_dispatcher_requires_explicit_voice_config_to_exist(tmp_path: Path) 
         raise AssertionError("expected FileNotFoundError for missing explicit voice config")
 
 
-def test_require_voice_ref_audio_and_text_does_not_fall_back_to_profile_emotions(tmp_path: Path) -> None:
+def test_tts_dispatcher_global_none_overrides_profile_engine(tmp_path: Path) -> None:
+    settings = SimpleNamespace(
+        agent=SimpleNamespace(tts=SimpleNamespace(provider="none", voice_assets_root="./voices")),
+        root=SimpleNamespace(root_dir=str(tmp_path)),
+    )
+    character = CharacterSettings(
+        tts_config=TTSConfig(
+            character_name="baoqiao",
+            engine="qwen_tts",
+            voice="missing-voice",
+        )
+    )
+
+    assert TTSDispatcher(settings, character).resolve("hello").engine == "none"
+
     config_dir = tmp_path / "config" / "voices"
     voice_assets_root = tmp_path / "voice-assets"
     config_dir.mkdir(parents=True)

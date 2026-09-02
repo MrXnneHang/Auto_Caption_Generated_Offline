@@ -668,17 +668,16 @@ PACKAGE_RULES: list[PackageRule] = [
 
 
 def _check_provider_package_compatibility(settings: XnneHangLabSettings) -> list[str]:
-    """检查已选择的 provider 是否与 package 安装状态一致。
-
-    TTS provider 选择后自动联动 package 开关（用户在 UI 选了就是想用）。
-    """
+    """检查已选择的 provider 是否与 package 安装状态一致。"""
     issues: list[str] = []
 
     active_tts = _resolve_active_tts_provider(settings)
-    if active_tts in {"gsv_lite", "genie_tts", "qwen_tts"}:
-        if not getattr(settings.package, active_tts, True):
-            setattr(settings.package, active_tts, True)
-            logger.info("[VALIDATOR] 自动启用 package.{} (因 tts.provider = {})", active_tts, active_tts)
+    if active_tts in {"gsv_lite", "genie_tts", "qwen_tts"} and not getattr(settings.package, active_tts, False):
+        issues.append(
+            " [package]\n"
+            f' tts.provider = "{active_tts}", 但 package.{active_tts} = false\n'
+            f" -> 在 [package] 下设置 {active_tts} = true"
+        )
 
     active_asr = settings.asr.asr_model_provider
     if active_asr == "sherpa" and not settings.package.sherpa_asr:
@@ -712,11 +711,11 @@ def validate_packages(settings: XnneHangLabSettings) -> list[str]:
 
     for rule in PACKAGE_RULES:
         if rule.package_name in {"gsv_lite", "genie_tts", "qwen_tts"}:
-            enabled = rule.package_name == active_tts_provider
+            enabled = rule.package_name == active_tts_provider and getattr(settings.package, rule.package_name, False)
         elif rule.package_name == "sherpa_asr":
-            enabled = active_asr_provider == "sherpa"
+            enabled = active_asr_provider == "sherpa" and settings.package.sherpa_asr
         elif rule.package_name == "qwen_asr":
-            enabled = active_asr_provider == "qwen"
+            enabled = active_asr_provider == "qwen" and settings.package.qwen_asr
         else:
             enabled = getattr(settings.package, rule.package_name, False)
         if not enabled:

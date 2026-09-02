@@ -31,6 +31,7 @@ from lab.conversations.conversation_handler import (
     handle_individual_interrupt,
 )
 from lab.message_handler import message_handler
+from lab.runtime.capabilities import build_runtime_capabilities
 from lab.service_context import ServiceContext
 
 if TYPE_CHECKING:
@@ -231,10 +232,7 @@ class WebSocketHandler:
                         else ""
                     ),
                     "client_uid": client_uid,
-                    "asr_enabled": bool(
-                        session_service_context.lab_setting.asr.asr_model_provider
-                        and session_service_context.lab_setting.asr.asr_model_provider != "none"
-                    ),
+                    "asr_enabled": build_runtime_capabilities(session_service_context.lab_setting).voice["asr"].enabled,
                 }
             )
         )
@@ -248,7 +246,7 @@ class WebSocketHandler:
 
     async def _init_service_context(self) -> ServiceContext:
         """Initialize service context for a new session by cloning the default context"""
-        session_service_context = ServiceContext()
+        session_service_context = ServiceContext(self.default_context_cache.lab_setting.model_copy(deep=True))
         session_service_context.load_cache(
             lab_setting=self.default_context_cache.lab_setting.model_copy(deep=True),
             server_config=self.default_context_cache.server_config.model_copy(deep=True),  # type: ignore

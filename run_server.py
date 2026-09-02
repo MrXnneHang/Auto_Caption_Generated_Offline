@@ -48,26 +48,23 @@ def validate_config(settings: XnneHangLabSettings) -> None:
 def run(lab_settings: XnneHangLabSettings, args: argparse.Namespace):
     """Initialize logging and start the FastAPI server."""
 
-    import lab.server as lab_server_module
     from lab.logger.logger_group import init_logger
     from lab.server import WebSocketServer
 
     init_logger()
-    validate_config(lab_settings)
+    server_settings = lab_settings.model_copy(
+        update={"server": lab_settings.server.model_copy(update={"port": args.port})}
+    )
+    validate_config(server_settings)
     logger.info(f"XnneHangLab, version v{get_version()}")
 
-    server_config = lab_settings.server
-    if args.port is not None:
-        server_config.port = args.port
-        lab_server_module.lab_settings.server.port = args.port
-
-    server = WebSocketServer()
+    server = WebSocketServer(server_settings)
 
     uvicorn.run(
         app=server.app,
-        host=server_config.host,
-        port=server_config.port,
-        log_level=server_config.uvicorn_log_level.lower(),
+        host=server_settings.server.host,
+        port=server_settings.server.port,
+        log_level=server_settings.server.uvicorn_log_level.lower(),
         ws="websockets-sansio",
     )
 

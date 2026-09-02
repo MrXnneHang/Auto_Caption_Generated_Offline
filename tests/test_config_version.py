@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import tomllib
 from typing import TYPE_CHECKING
 
 from lab.config_manager import XnneHangLabSettings, load_settings_file
@@ -26,7 +25,4 @@ def test_load_lab_settings_normalizes_conf_version(monkeypatch: MonkeyPatch, tmp
     assert settings.agent.chat_model.thinking_mode == "default"
     assert settings.agent.require_detailed is False
 
-    with lab_toml.open("rb") as file:
-        saved = tomllib.load(file)
-
-    assert saved["conf_version"] == CURRENT_CONF_VERSION
+    assert lab_toml.read_text(encoding="utf-8") == 'conf_version = "v0.0.1"\n'
