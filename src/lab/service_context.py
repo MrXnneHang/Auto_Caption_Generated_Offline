@@ -36,11 +36,11 @@ class ServiceContext:
     并支持根据 `lab.toml` 重新加载运行时状态。
     """
 
-    def __init__(self):
+    def __init__(self, lab_setting: XnneHangLabSettings):
         """初始化默认服务上下文。"""
         self._mcp_connected = False
         self._mcp_lock = asyncio.Lock()
-        self.lab_setting: XnneHangLabSettings = load_settings_file("lab.toml", XnneHangLabSettings)
+        self.lab_setting = lab_setting
         self.server_config: ServerSettings | None = None
         self.character_config: CharacterSettings | None = None
 
@@ -283,9 +283,8 @@ class ServiceContext:
             self.agent_engine = None
             self._mcp_connected = False
 
-        new_context = ServiceContext()
+        new_context = ServiceContext(self.lab_setting.model_copy(deep=True))
         try:
-            new_context.lab_setting = self.lab_setting.model_copy(deep=True)
             await new_context.load_from_config(new_context.lab_setting)
             await new_context.ensure_mcp_connected()
         except Exception:

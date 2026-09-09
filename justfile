@@ -53,6 +53,12 @@ server:
   uv run get_root
   uv run run_server.py
 
+test-light:
+  uv run pytest tests/test_lightweight_runtime.py tests/test_config_version.py tests/test_tool_prompt_cleanup.py tests/test_asr_client_fallback.py
+
+test-voice-contract:
+  uv run pytest tests/test_lightweight_runtime.py
+
 # API Router Test
 
 test-proxy:

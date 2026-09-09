@@ -4,7 +4,7 @@
 
 > 当前配置版本：`v1.6.5`
 >
-> 配置加载规则：程序会优先在项目 `config/` 下查找配置；找不到会尝试从系统配置目录读取；再找不到会初始化默认配置并写回，保证字段结构完整。
+> 配置加载规则：程序会优先在项目 `config/` 下查找配置；找不到会尝试从系统配置目录读取；再找不到时仅使用内存默认值。读取配置不会创建、补全或改写文件；显式保存或执行 `just reload-lab-setting` 才会写入配置。
 
 ---
 
@@ -93,14 +93,11 @@ lab.toml
 
 1. `./config/<name>.toml`
 2. 系统配置目录（Windows: `~/AppData`，Linux/macOS: `~/.config`，或 `XDG_CONFIG_HOME`）
-3. 都没有时，自动创建默认配置并写入 `./config/<name>.toml`
+3. 都没有时，只在内存中使用默认配置；不会创建文件。
 
-### 自动写回
+### 读取与写入
 
-配置会先经过校验与补全：
-
-- 缺少字段：用默认值补齐
-- 补齐后会立刻写回，保证你的 `lab.toml` 始终是完整结构
+配置读取会完成 Pydantic 校验和内存中的默认值/兼容字段归一化，但不会修改磁盘。只有 Launcher 保存设置或显式执行 `just reload-lab-setting` 才会生成、迁移或写回 TOML。
 
 ---
 
@@ -127,7 +124,7 @@ root_dir = "D:\\tmp\\XnneHangLab"
 | sherpa_asr | false | 是否启用 Sherpa-ONNX Paraformer ASR 服务 |
 | qwen_asr | false | 是否启用 Qwen3-ASR OpenVINO 服务 |
 | gsv_lite | false | 是否包含 GSV-Lite 能力 |
-| genie_tts | true | 是否包含 Genie-TTS 能力 |
+| genie_tts | false | 是否包含 Genie-TTS 能力 |
 | qwen_tts | false | 是否包含 Qwen-TTS 能力 |
 | llm_translate | false | 是否启用本地 LLM 翻译引擎 |
 | local_embedding | false | 是否启用本地 GGUF Embedding 服务 |
@@ -173,16 +170,16 @@ memory_chat_profile = "profiles/congyin.toml"
 
 ### 🔊 [agent.tts]
 
-`[agent.tts]` 负责选择当前 Agent 使用哪个 TTS provider。旧字段 `agent.speaker_model` 仍可被读取并迁移，但保存后会统一写成 `[agent.tts]` 结构。
+`[agent.tts]` 负责选择当前 Agent 使用哪个 TTS provider。默认值为 `none`；旧字段 `agent.speaker_model` 仍可被读取并迁移，但保存后会统一写成 `[agent.tts]` 结构。
 
 ```toml
 [agent.tts]
-provider = "genie_tts"
+provider = "none"
 ```
 
 | 字段 | 说明 |
 |---|---|
-| provider | 当前 TTS 提供方，支持 `genie_tts` / `gsv_lite` / `qwen_tts` |
+| provider | 当前 TTS 提供方，支持 `none` / `genie_tts` / `gsv_lite` / `qwen_tts`；`none` 会覆盖角色 profile 中的语音引擎并跳过本地 TTS 加载 |
 
 补充说明：
 

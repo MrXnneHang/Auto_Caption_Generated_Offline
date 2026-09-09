@@ -14,7 +14,7 @@ from loguru import logger
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import Response
 
-from lab.config_manager import XnneHangLabSettings, load_settings_file
+from lab.runtime.capabilities import build_runtime_capabilities
 from lab.service_context import ServiceContext
 
 if TYPE_CHECKING:
@@ -22,13 +22,9 @@ if TYPE_CHECKING:
 
     from loguru import Logger
 
-lab_settings: XnneHangLabSettings = load_settings_file("lab.toml", XnneHangLabSettings)
+    from lab.config_manager import XnneHangLabSettings
+
 _T = TypeVar("_T")
-
-ROOT_DIR = Path(lab_settings.root.root_dir) / "static"
-
-if not ROOT_DIR.exists():
-    raise FileNotFoundError(f"Static root directory {ROOT_DIR} does not exist.")
 
 
 class AvatarStaticFiles(StaticFiles):
@@ -121,7 +117,9 @@ async def lifespan(app: FastAPI):
     Raises:
         ValueError: `/memory/chat` 缺少关键配置时抛出。
     """
-    if lab_settings.asr.asr_model_provider == "sherpa":
+    settings: XnneHangLabSettings = app.state.runtime_settings
+    capabilities = app.state.runtime_capabilities
+    if capabilities.voice["asr"].enabled and settings.asr.asr_model_provider == "sherpa":
         from lab.api.logic.sherpa_asr import load_sherpa_asr
 
         await _run_startup_step(
@@ -130,7 +128,7 @@ async def lifespan(app: FastAPI):
             success_message="Sherpa-ONNX ASR/VAD preload finished ({:.1f}s)",
         )
 
-    if lab_settings.asr.asr_model_provider == "qwen":
+    if capabilities.voice["asr"].enabled and settings.asr.asr_model_provider == "qwen":
         from lab.api.logic.qwen_asr import preload_configured_qwen_asr_engines
 
         await _run_startup_step(
@@ -139,7 +137,7 @@ async def lifespan(app: FastAPI):
             success_handler=_log_qwen_asr_startup_result,
         )
 
-    if lab_settings.agent.tts.provider == "qwen_tts":
+    if capabilities.voice["tts"].enabled and settings.agent.tts.provider == "qwen_tts":
         from lab.api.logic.faster_qwen_tts import load_qwen_tts_model
 
         await _run_startup_step(
@@ -149,7 +147,7 @@ async def lifespan(app: FastAPI):
             step_logger=logger.bind(group="tts"),
         )
 
-    if lab_settings.agent.tts.provider == "genie_tts":
+    if capabilities.voice["tts"].enabled and settings.agent.tts.provider == "genie_tts":
         from lab.api.logic.genie_tts import load_genie_tts_model, warmup_genie_tts_model
 
         genie_logger = logger.bind(group="tts")
@@ -159,7 +157,7 @@ async def lifespan(app: FastAPI):
         await warmup_genie_tts_model()
         genie_logger.info(f"Genie-TTS model loaded and warmed up ({time.perf_counter() - genie_started:.1f}s)")
 
-    if lab_settings.agent.tts.provider == "gsv_lite":
+    if capabilities.voice["tts"].enabled and settings.agent.tts.provider == "gsv_lite":
         from lab.api.logic.gsv_lite import load_gsv_lite_model, warmup_gsv_lite_model
 
         gsv_lite_logger = logger.bind(group="tts")
@@ -169,7 +167,7 @@ async def lifespan(app: FastAPI):
         await warmup_gsv_lite_model()
         gsv_lite_logger.info(f"GSV-Lite model loaded and warmed up ({time.perf_counter() - gsv_lite_started:.1f}s)")
 
-    if lab_settings.package.llm_translate:
+    if settings.package.llm_translate:
         from lab.api.logic.llm_translate import preload_configured_llm_translate_engine
 
         await _run_startup_step(
@@ -178,22 +176,22 @@ async def lifespan(app: FastAPI):
             success_handler=_log_llm_translate_startup_result,
         )
 
-    if lab_settings.package.local_embedding:
+    if settings.package.local_embedding:
         from lab.api.logic.embedding import load_embedding_model
 
         await _run_startup_step(
             "⏳ 预加载本地 Embedding 模型...",
             partial(
                 load_embedding_model,
-                model_path=lab_settings.local_embedding.model_path,
-                pooling_type=lab_settings.local_embedding.pooling_type,
-                n_gpu_layers=lab_settings.local_embedding.n_gpu_layers,
+                model_path=settings.local_embedding.model_path,
+                pooling_type=settings.local_embedding.pooling_type,
+                n_gpu_layers=settings.local_embedding.n_gpu_layers,
             ),
             success_message="✅ 本地 Embedding 模型预加载完成 ({:.1f}s)",
         )
 
     ctx = getattr(app.state, "default_context_cache", None)
-    if ctx is not None and lab_settings.agent.enable_tool:
+    if ctx is not None and settings.agent.enable_tool:
         try:
             logger.info("Application startup: connecting to MCP servers...")
             await ctx.agent_engine.connect_mcp_servers()
@@ -206,7 +204,7 @@ async def lifespan(app: FastAPI):
 
     # /memory/chat 是 lab 自有的 profile 驱动聊天端点（与已移除的 memory_bench 后端无关），
     # 配置了 memory_chat_profile 即启用。
-    if lab_settings.agent.memory_chat_profile:
+    if settings.agent.memory_chat_profile:
         try:
             chat_started = time.perf_counter()
             logger.info("⏳ 初始化 /memory/chat 端点...")
@@ -215,13 +213,13 @@ async def lifespan(app: FastAPI):
             from lab.api.routes.chat import chat_state
             from lab.history_storage.store import HistoryStorage
 
-            chat_model_cfg = lab_settings.agent.chat_model
-            ws_root = Path(lab_settings.root.root_dir)
+            chat_model_cfg = settings.agent.chat_model
+            ws_root = Path(settings.root.root_dir)
             chat_state.chat_model = chat_model_cfg.llm_model_name
             chat_state.workspace_root = str(ws_root)
             chat_state.history_storage_dir = str(ws_root / "data" / "conversations")
 
-            chat_profile_path_str = lab_settings.agent.memory_chat_profile
+            chat_profile_path_str = settings.agent.memory_chat_profile
             chat_profile_path = Path(chat_profile_path_str)
             if not chat_profile_path.is_absolute():
                 chat_profile_path = ws_root / chat_profile_path_str
@@ -230,14 +228,14 @@ async def lifespan(app: FastAPI):
 
             chat_store = HistoryStorage(base_dir=chat_state.history_storage_dir)
             chat_state.agent_core = await AgentFactory.create_core_with_profile(
-                lab_setting=lab_settings,
+                lab_setting=settings,
                 profile_path=chat_profile_path,
                 storage=HistoryStorageAdapter(
                     chat_store,
-                    condense_after_turns=lab_settings.agent.structured_history_full_turns,
+                    condense_after_turns=settings.agent.structured_history_full_turns,
                 ),
                 workspace_root=ws_root,
-                packages=lab_settings.package.to_dict(),
+                packages=settings.package.to_dict(),
             )
             logger.info(
                 "✅ /memory/chat 端点初始化完成 ({:.1f}s, profile={})",
@@ -251,7 +249,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    if lab_settings.package.llm_translate:
+    if settings.package.llm_translate:
         from lab.api.logic.llm_translate import unload_llm_translate_engine
 
         try:
@@ -259,7 +257,7 @@ async def lifespan(app: FastAPI):
         except Exception as exc:
             logger.warning("LLM Translate cleanup failed: {}", exc)
 
-    if lab_settings.package.local_embedding:
+    if settings.package.local_embedding:
         from lab.api.logic.embedding import unload_embedding_model
 
         try:
@@ -271,19 +269,15 @@ async def lifespan(app: FastAPI):
 
 
 class WebSocketServer:
-    def __init__(self) -> None:
-        """创建并初始化 WebSocket/FastAPI 服务。
+    def __init__(self, settings: XnneHangLabSettings) -> None:
+        """创建并初始化 WebSocket/FastAPI 服务。"""
+        root_dir = Path(settings.root.root_dir) / "static"
+        if not root_dir.exists():
+            raise FileNotFoundError(f"Static root directory {root_dir} does not exist.")
 
-        Args:
-            None.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-        """
         self.app = FastAPI(lifespan=lifespan)
+        self.app.state.runtime_settings = settings
+        self.app.state.runtime_capabilities = build_runtime_capabilities(settings)
 
         self.app.add_middleware(
             CORSMiddleware,
@@ -293,8 +287,8 @@ class WebSocketServer:
             allow_headers=["*"],
         )
 
-        default_context_cache = ServiceContext()
-        asyncio.run(default_context_cache.load_from_config(default_context_cache.lab_setting))
+        default_context_cache = ServiceContext(settings)
+        asyncio.run(default_context_cache.load_from_config(settings))
         vtuber_routes = import_module("lab.api.routes.vtuber")
         client_ws_router = vtuber_routes.init_client_ws_route(default_context_cache=default_context_cache)
 
@@ -318,47 +312,47 @@ class WebSocketServer:
             "DeepLX 端点",
             lambda: self.app.include_router(import_module("lab.api.routes.deeplx").router),
         )
-        if lab_settings.package.llm_translate:
+        if settings.package.llm_translate:
             _include_router_with_log(
                 "LLM Translate 端点",
                 lambda: self.app.include_router(import_module("lab.api.routes.llm_translate").router),
             )
-        if lab_settings.package.local_embedding:
+        if settings.package.local_embedding:
             _include_router_with_log(
                 "本地 Embedding 端点",
                 lambda: self.app.include_router(import_module("lab.api.routes.embedding").router),
             )
-        if lab_settings.asr.asr_model_provider in ("sherpa", "qwen"):
+        if self.app.state.runtime_capabilities.voice["asr"].enabled:
             _include_router_with_log(
                 "ASR reload 端点",
                 lambda: self.app.include_router(import_module("lab.api.routes.asr_reload").router),
             )
-        if lab_settings.asr.asr_model_provider == "sherpa":
+        if self.app.state.runtime_capabilities.voice["asr"].enabled and settings.asr.asr_model_provider == "sherpa":
             _include_router_with_log(
                 "Sherpa-ONNX ASR 端点",
                 lambda: self.app.include_router(import_module("lab.api.routes.asr_sherpa").router),
             )
-        if lab_settings.asr.asr_model_provider == "qwen":
+        if self.app.state.runtime_capabilities.voice["asr"].enabled and settings.asr.asr_model_provider == "qwen":
             _include_router_with_log(
                 "Qwen3-ASR 端点",
                 lambda: self.app.include_router(import_module("lab.api.routes.asr_qwen").router),
             )
-        if lab_settings.agent.tts.provider == "qwen_tts":
+        if self.app.state.runtime_capabilities.voice["tts"].enabled and settings.agent.tts.provider == "qwen_tts":
             _include_router_with_log(
                 "faster-qwen-tts route",
                 lambda: self.app.include_router(import_module("lab.api.routes.faster_qwen_tts").router),
             )
-        if lab_settings.agent.tts.provider == "genie_tts":
+        if self.app.state.runtime_capabilities.voice["tts"].enabled and settings.agent.tts.provider == "genie_tts":
             _include_router_with_log(
                 "genie-tts route",
                 lambda: self.app.include_router(import_module("lab.api.routes.genie_tts").router),
             )
-        if lab_settings.agent.tts.provider == "gsv_lite":
+        if self.app.state.runtime_capabilities.voice["tts"].enabled and settings.agent.tts.provider == "gsv_lite":
             _include_router_with_log(
                 "gsv-lite route",
                 lambda: self.app.include_router(import_module("lab.api.routes.gsv_lite").router),
             )
-        if lab_settings.agent.memory_chat_profile:
+        if settings.agent.memory_chat_profile:
             _include_router_with_log(
                 "/memory/chat 路由",
                 lambda: self.app.include_router(
@@ -367,20 +361,20 @@ class WebSocketServer:
                 ),
             )
 
-        logger.info("Mounting static files from {}", ROOT_DIR)
+        logger.info("Mounting static files from {}", root_dir)
         self.app.mount(
             "/live2d-models",
-            StaticFiles(directory=(ROOT_DIR / "live2d-models")),
+            StaticFiles(directory=(root_dir / "live2d-models")),
             name="live2d-models",
         )
         self.app.mount(
             "/bg",
-            StaticFiles(directory=str(ROOT_DIR / "backgrounds")),
+            StaticFiles(directory=str(root_dir / "backgrounds")),
             name="backgrounds",
         )
         self.app.mount(
             "/avatars",
-            AvatarStaticFiles(directory=str(ROOT_DIR / "avatars")),
+            AvatarStaticFiles(directory=str(root_dir / "avatars")),
             name="avatars",
         )
         self.app.state.default_context_cache = default_context_cache

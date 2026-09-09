@@ -51,7 +51,7 @@ async def process_single_conversation(
     """
     # Create TTSTaskManager for this conversation
     turn_id = create_turn_id()
-    tts_manager = TTSTaskManager(turn_id=turn_id)
+    tts_manager = TTSTaskManager(turn_id=turn_id, lab_setting=context.lab_setting)
 
     try:
         # Send initial signals
@@ -64,7 +64,7 @@ async def process_single_conversation(
 
         # Process user input
 
-        input_text = await process_user_input(user_input, websocket_send)
+        input_text = await process_user_input(user_input, websocket_send, lab_setting=context.lab_setting)
 
         # Create batch input
         # TODO: 检查 context 的初始化，并且提前做好默认值

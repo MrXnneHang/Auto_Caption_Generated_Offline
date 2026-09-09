@@ -83,20 +83,11 @@ class ASRClient(BaseClientInterface):
             raise RuntimeError(f"Unsupported Qwen3-ASR model: {model_name}")
         return resolved
 
-    def __init__(self) -> None:
-        """初始化 ASR HTTP 客户端。
-
-        Args:
-            None.
-
-        Returns:
-            None.
-
-        Raises:
-            None.
-        """
+    def __init__(self, lab_setting: XnneHangLabSettings | None = None) -> None:
+        """初始化 ASR HTTP 客户端。"""
         self.base_url = self.base_url
         self.last_error: str | None = None
+        self._lab_setting = lab_setting
 
     def _resolve_effective_provider(self, settings: XnneHangLabSettings) -> str:
         """解析当前请求实际使用的 ASR provider。"""
@@ -129,7 +120,7 @@ class ASRClient(BaseClientInterface):
         Raises:
             RuntimeError: Qwen3-ASR 服务未启用时抛出。
         """
-        settings = load_settings_file("lab.toml", XnneHangLabSettings)
+        settings = self._lab_setting or load_settings_file("lab.toml", XnneHangLabSettings)
         if settings.asr.asr_model_provider != "qwen":
             raise RuntimeError("Qwen3-ASR is disabled in lab.toml")
 
@@ -153,7 +144,7 @@ class ASRClient(BaseClientInterface):
         Raises:
             RuntimeError: 目标服务未启用时抛出。
         """
-        settings = load_settings_file("lab.toml", XnneHangLabSettings)
+        settings = self._lab_setting or load_settings_file("lab.toml", XnneHangLabSettings)
         effective_provider = self._resolve_effective_provider(settings)
         if effective_provider == "qwen":
             model_name = self._resolve_qwen_route_model(request)

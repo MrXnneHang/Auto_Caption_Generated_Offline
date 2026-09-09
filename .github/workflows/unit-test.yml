@@ -37,6 +37,14 @@ jobs:
         run: |
           just ci-install
 
-      - name: Run unit tests
+      - name: Run lightweight runtime tests
+        run: |
+          just test-light
+
+      - name: Run voice capability contract tests
+        run: |
+          just test-voice-contract
+
+      - name: Run remaining unit tests
         run: |
           just ci-test

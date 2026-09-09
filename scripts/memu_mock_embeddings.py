@@ -41,8 +41,7 @@ class Handler(BaseHTTPRequestHandler):
         raw = payload.get("input", [])
         inputs = [raw] if isinstance(raw, str) else list(raw)
         data = [
-            {"object": "embedding", "index": i, "embedding": embed_text(str(text))}
-            for i, text in enumerate(inputs)
+            {"object": "embedding", "index": i, "embedding": embed_text(str(text))} for i, text in enumerate(inputs)
         ]
         response = json.dumps(
             {

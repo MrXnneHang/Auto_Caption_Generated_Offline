@@ -1,6 +1,6 @@
 # 配置模块
 
-`src/lab/config_manager/` 负责 **TOML 配置加载、Pydantic 校验、默认值补全、自动写回**。
+`src/lab/config_manager/` 负责 **TOML 配置加载、Pydantic 校验与显式持久化**。
 
 它的定位很朴素：让 `lab.toml` 永远是一个可直接读取、结构完整、类型可靠的配置对象，而不是一堆随手拼出来的字典。
 
@@ -29,11 +29,11 @@ settings = load_settings_file("lab.toml", XnneHangLabSettings)
 `load_settings_file()` 的工作顺序固定：
 
 1. 搜索配置文件位置
-2. 用 `tomllib` 读取 TOML
+2. 用 `tomllib` 读取 TOML；未找到时构造内存默认值
 3. 交给 Pydantic 做校验和默认值补全
-4. 用 `tomli_w` 写回完整配置
+4. 仅在调用 `write_settings_file()` 或显式重载配置时写入 TOML
 
-这样设计的原因，是让“缺字段”变成可恢复状态，而不是把运行期异常直接甩给用户。
+这样读取配置不会意外修改用户文件，同时仍让保存路径获得完整、类型可靠的配置。
 
 ---
 
@@ -145,7 +145,7 @@ qwen_asr = false
 llm_translate = false
 local_embedding = false
 gsv_lite = false
-genie_tts = true
+genie_tts = false
 qwen_tts = false
 to_do_list = true
 yutto_uiya = true
@@ -162,7 +162,7 @@ yutto_uiya = true
 1. `{当前目录}/config/lab.toml`
 2. `{XDG_CONFIG_HOME}/lab.toml` 或 Windows 的 `~/AppData/lab.toml`
 
-如果都不存在，`load_settings_file()` 会在 `config/` 下创建默认配置。
+如果都不存在，`load_settings_file()` 返回内存默认值，不创建配置文件。
 
 ---
 

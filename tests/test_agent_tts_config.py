@@ -11,11 +11,10 @@ def test_agent_settings_migrate_legacy_speaker_model() -> None:
     assert "speaker_model" not in settings.model_dump()
 
 
-def test_agent_settings_defaults_to_genie_tts() -> None:
+def test_agent_settings_defaults_to_disabled_tts() -> None:
     settings = AgentSettings.model_validate({})
 
-    assert settings.tts.provider == "genie_tts"
-    assert settings.tts.voice_assets_root == "./voices"
+    assert settings.tts.provider == "none"
 
 
 def test_agent_settings_gsv_lite_use_bert_defaults_to_false() -> None:

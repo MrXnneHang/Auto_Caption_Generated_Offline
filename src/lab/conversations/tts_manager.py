@@ -306,9 +306,9 @@ def _resolve_voice_assets_root(lab_settings: object | None, workspace_root: Path
 
 def _to_workspace_relative_path(path: Path, workspace_root: Path) -> str:
     try:
-        return str(path.resolve().relative_to(workspace_root.resolve()))
+        return path.resolve().relative_to(workspace_root.resolve()).as_posix()
     except ValueError:
-        return str(path)
+        return path.as_posix()
 
 
 def _find_audio_file(directory: Path, stem: str) -> Path | None:
@@ -783,8 +783,17 @@ class TTSDispatcher:
         self._character_config = character_config
         self._workspace_root = _resolve_workspace_root(lab_settings)
         self._voice_assets_root = _resolve_voice_assets_root(lab_settings, self._workspace_root)
-        self._voice_config = _load_voice_config(self._configured_voice_id, self._workspace_root)
-        if self._configured_voice_id and self._voice_config is None:
+        agent_tts_settings = getattr(getattr(self._lab_settings, "agent", None), "tts", None)
+        self._voice_config = (
+            None
+            if _normalize_tts_provider(getattr(agent_tts_settings, "provider", None)) == "none"
+            else _load_voice_config(self._configured_voice_id, self._workspace_root)
+        )
+        if (
+            self._configured_voice_id
+            and self._voice_config is None
+            and _normalize_tts_provider(getattr(agent_tts_settings, "provider", None)) != "none"
+        ):
             raise FileNotFoundError(
                 f"Voice config does not exist for configured voice '{self._configured_voice_id}': "
                 f"{self._workspace_root / 'config' / 'voices' / f'{self._configured_voice_id}.toml'}"
@@ -820,6 +829,11 @@ class TTSDispatcher:
         return ResolvedTTSDispatch(engine=engine, request_payload=request_payload)
 
     def _resolve_engine(self) -> str:
+        agent_tts_settings = getattr(getattr(self._lab_settings, "agent", None), "tts", None)
+        configured_provider = _normalize_tts_provider(getattr(agent_tts_settings, "provider", None))
+        if configured_provider == "none":
+            return "none"
+
         if self._character_config is not None:
             profile_engine = _normalize_optional_tts_provider(self._character_config.tts_config.engine)
             if profile_engine is not None:
@@ -828,8 +842,7 @@ class TTSDispatcher:
         if self._voice_config is not None and self._voice_config.preferred_engine is not None:
             return self._voice_config.preferred_engine
 
-        agent_tts_settings = getattr(getattr(self._lab_settings, "agent", None), "tts", None)
-        return _normalize_tts_provider(getattr(agent_tts_settings, "provider", None))
+        return configured_provider
 
     def _resolve_resources(self, engine: str, emotion_keys: list[str] | None) -> tuple[str, str | None, str | None]:
         if self._voice_config is not None:
@@ -864,7 +877,7 @@ class TTSDispatcher:
 class TTSTaskManager:
     """Manages TTS tasks and ensures ordered delivery to frontend while allowing parallel TTS generation"""
 
-    def __init__(self, turn_id: str | None = None) -> None:
+    def __init__(self, turn_id: str | None = None, lab_setting: XnneHangLabSettings | None = None) -> None:
         self.task_list: list[asyncio.Task[None]] = []
         self._lock = asyncio.Lock()
         self._tts_semaphore = asyncio.Semaphore(1)
@@ -873,6 +886,7 @@ class TTSTaskManager:
         self._sequence_counter = 0
         self._next_sequence_to_send = 0
         self._turn_id = turn_id
+        self._lab_setting = lab_setting
         self._estimated_playback_seconds = 0.0
 
     def has_output(self) -> bool:
@@ -906,6 +920,14 @@ class TTSTaskManager:
             websocket_send: WebSocket send function
             character_config: Current runtime character configuration
         """
+        if self._lab_setting is not None and self._lab_setting.agent.tts.provider == "none":
+            current_sequence = self._sequence_counter
+            self._sequence_counter += 1
+            if self._sender_task is None or self._sender_task.done():
+                self._sender_task = asyncio.create_task(self._process_payload_queue(websocket_send))
+            await self._send_silent_payload(display_text, actions, current_sequence)
+            return
+
         if not has_audible_tts_text(tts_text):
             logger.debug("Empty TTS text, sending silent display payload")
             current_sequence = self._sequence_counter
@@ -1045,7 +1067,7 @@ class TTSTaskManager:
         """Generate audio file from text."""
         provider: str | None = None
         try:
-            lab_settings = load_settings_file("lab.toml", XnneHangLabSettings)
+            lab_settings = self._lab_setting or load_settings_file("lab.toml", XnneHangLabSettings)
             dispatch = TTSDispatcher(lab_settings, character_config).resolve(text, emotion_keys)
             if dispatch.engine == "none":
                 return None

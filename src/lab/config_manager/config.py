@@ -143,10 +143,10 @@ def load_settings_file(
     | ASRSettings
     | ServerSettings
 ):
-    """加载并校验配置文件。
+    """加载并校验配置文件，不修改磁盘。
 
-    若目标文件不存在，会先在工作区 `config/` 下创建空文件，
-    再使用对应模型默认值完成补全并回写。
+    未找到目标文件时，返回对应模型的内存默认值。需要生成、迁移或持久化
+    配置时，调用方必须显式使用 `write_settings_file()`。
 
     Args:
         setting_name: 配置文件名。
@@ -157,17 +157,12 @@ def load_settings_file(
     """
     settings_file = search_for_settings_file(setting_name=setting_name)
     if settings_file is None:
-        config_dir = Path("config")
-        config_dir.mkdir(exist_ok=True)
-        settings_file = config_dir / setting_name
-        settings_file.touch()
+        return setting.model_validate({})
 
     with settings_file.open("r", encoding="utf-8") as file:
         settings_raw: Any = tomllib.loads(file.read())
 
-    validated_settings = setting.model_validate(settings_raw)
-    write_settings_file(settings_name=setting_name, settings=validated_settings)
-    return validated_settings
+    return setting.model_validate(settings_raw)
 
 
 def write_settings_file(

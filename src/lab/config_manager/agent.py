@@ -218,7 +218,7 @@ class TTSSettings(BaseModel):
     provider: Annotated[
         TTSProvider,
         Field(
-            "genie_tts",
+            "none",
             title="TTS Provider",
             description="Active TTS backend.",
         ),

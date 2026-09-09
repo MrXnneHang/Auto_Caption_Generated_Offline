@@ -29,7 +29,7 @@ class ASRSettings(BaseModel):
     cache_dir: Annotated[str, Field("./cache", title="Cache directory")]
     output_dir: Annotated[str, Field("./output", title="Output directory")]
     vad_model_path: Annotated[str, Field("./models/silero_vad.onnx", title="Silero VAD model path")]
-    asr_model_provider: Annotated[Literal["none", "sherpa", "qwen"], Field("sherpa", title="ASR provider")]
+    asr_model_provider: Annotated[Literal["none", "sherpa", "qwen"], Field("none", title="ASR provider")]
     punctuation_list: Annotated[str, Field("，。；、？,.;?!")]
     sherpa: Annotated[
         SherpaASRSettings,

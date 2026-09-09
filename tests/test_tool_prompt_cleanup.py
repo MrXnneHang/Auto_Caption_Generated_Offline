@@ -18,7 +18,7 @@ def test_prompt_settings_no_longer_exposes_legacy_tool_prompt() -> None:
     assert "tool_prompt" not in PromptSettings.model_fields
 
 
-def test_load_settings_file_rewrites_legacy_tool_prompt_out(
+def test_load_settings_file_parses_legacy_tool_prompt_without_rewriting(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -38,8 +38,12 @@ tool_prompt = "./prompts/tool_prompt.txt"
 
     assert settings.agent.prompts.vision_prompt == "./prompts/vision_prompt.txt"
     assert not hasattr(settings.agent.prompts, "tool_prompt")
-    rewritten = (config_dir / "lab.toml").read_text(encoding="utf-8")
-    assert 'tool_prompt = "./prompts/tool_prompt.txt"' not in rewritten
+    assert (
+        (config_dir / "lab.toml")
+        .read_text(encoding="utf-8")
+        .strip()
+        .endswith('tool_prompt = "./prompts/tool_prompt.txt"')
+    )
 
 
 def test_system_prompt_builder_uses_current_tool_prompt_chain(tmp_path: Path) -> None:
