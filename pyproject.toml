@@ -181,6 +181,17 @@ qwen-asr = {  workspace = true }
 gsv-tts-lite = { workspace = true }
 wikimem = { workspace = true }
 
+[tool.ty.analysis]
+# Voice and model-download dependencies are installed only with their groups.
+allowed-unresolved-imports = [
+  "modelscope.**",
+  "sounddevice",
+  "faster_qwen3_tts",
+  "pyopenjtalk",
+  "nltk.**",
+  "sherpa_onnx",
+]
+
 [tool.ty.environment]
 python-version = "3.11"
 # Pin the platform CI checks (ubuntu) so `just lint` reports identical
