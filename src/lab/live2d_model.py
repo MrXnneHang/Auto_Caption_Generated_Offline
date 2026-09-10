@@ -258,6 +258,9 @@ class Live2dModel:
         if "motionAssets" in preset:
             info["motionAssets"] = preset["motionAssets"]
 
+        if "importedMotions" in preset:
+            info["importedMotions"] = preset["importedMotions"]
+
         if "expressions" in preset:
             info["_preset_expressions"] = preset["expressions"]
 
